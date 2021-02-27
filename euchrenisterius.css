@@ -1,0 +1,150 @@
+/**
+ *------
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & 
+ * Emmanuel Colin <ecolin@boardgamearena.com>
+ * Euchre implementation : © W Michael Shirk <wmichaelshirk@gmail.com>
+ *
+ * This code has been produced on the BGA studio platform for use on 
+ * http://boardgamearena.com. See http://en.boardgamearena.com/#!doc/Studio for
+ * more information.
+ * -----
+ */
+
+ 
+ #mainview {
+     margin-top: 10px;
+     position: relative;
+     text-align: center;
+     --cardwidth: 70px;
+     --cardheight: 129px;
+     --avatar-radius: 1em;
+}
+
+
+/*
+ * INFO CARDS
+ */
+.special_cards{
+    float: right;
+    width: 150px;
+    height: 500px;
+    position: relative;
+}
+
+/*
+ * CARD TABLE
+ */
+#playertables {
+    margin: auto;
+    position: relative;
+    width: 600px;
+    height: 550px;
+    background-color: green;
+    border-radius: 20px;
+}
+
+#turn_order {
+    z-index: 0;
+	top: 50%;
+    font-weight: bold;
+    font-size: 5em;
+    color: darkgreen;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+}
+
+/*
+ * Players
+ */
+#playertables {
+    position: relative;
+    width: 500px;
+    height: 450px;
+}
+
+.playertable {
+	z-index: 1;
+    position: absolute;
+    text-align: center;
+    box-sizing: border-box;
+    padding: 20px;
+}
+.playerTables__name {
+	position: absolute; /* Fix to bottom */
+	bottom: 0;          /* " */
+    width: 100%;
+    box-sizing: border-box;
+    padding: 2px;
+	font-size: 12px;
+	color: white;
+	overflow: hidden;
+	text-overflow: ellipsis;
+    white-space: nowrap;
+    border-radius: var(--avatar-radius);
+    border: 1px solid white;
+}
+.playerTables__name > span {
+	font-weight: bold;
+	padding: 1px 4px;
+	border-radius: 3px;
+	text-shadow: rgba(0, 0, 0, 0.4) 1px 1px 1px;
+	letter-spacing: 0.05rem;
+}
+.playerTables__avatar-wrapper {
+	box-sizing: border-box;
+	position: relative;
+	width: 110px;
+	height: 110px;
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: 50% 50%;
+	border-radius: 2px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+	border-radius: 50%;
+}
+.playerTables__avatar {
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-repeat: no-repeat;
+    background-position: 50% 50%;
+	border-radius: 50%;
+}
+
+.playertable_N {
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+}
+.playertable_S {
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);    
+}
+.playertable_W {
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);    
+}
+.playertable_E {
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);    
+}
+
+
+/* state */
+.playerTables__table--active .playerTables__avatar-wrapper {
+	border: 4px solid rgba(255, 255, 255, 0.65);
+}
+
+
+#myhand {
+	font-style: italic;
+	text-align: center;
+}
+.spectatorMode #myhand_wrap {
+    display: none;
+}

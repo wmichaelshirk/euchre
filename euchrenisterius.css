@@ -141,10 +141,33 @@
 }
 
 
+/* Hand of Cards */
 #myhand {
 	font-style: italic;
 	text-align: center;
 }
 .spectatorMode #myhand_wrap {
     display: none;
+}
+
+/*
+ * Player Hand (Stock)
+ */
+.stockitem {
+    border-radius: 3px;
+    transform: translateY(0);
+    transition: box-shadow 0.2s ease-in,  transform .1s ease-in;
+}
+.stockitem_selected, .stockitem_selected:hover {
+    transform: translateY(-.5em);
+    box-shadow: rgba(0, 0, 0, 0.9) 0px 0px 7px !important;
+    border: 0 !important;
+}
+
+.stockitem:hover {
+    box-shadow: rgba(0, 0, 0, 0.25) 2px 4px 5px;
+}
+
+.stockitem--not-possible {
+	filter: brightness(0.8);
 }

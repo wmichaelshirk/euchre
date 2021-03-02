@@ -65,7 +65,7 @@ $machinestates = [
         "type" => "game",
         "action" => "stNewHand",
         "updateGameProgression" => true,
-        "transitions" => ["" => 20]
+        "transitions" => ["" => 29]
     ],
 
     // Bidding
@@ -95,7 +95,7 @@ $machinestates = [
         "description" => "",
         "type" => "game",
         "action" => "stEldestLeads",
-        "transitions" => [ "" => 30]
+        "transitions" => ["" => 30]
     ],
 
     // Tricks
@@ -104,10 +104,7 @@ $machinestates = [
         "description" => "",
         "type" => "game",
         "action" => "stNewTrick",
-        "transitions" => [
-            "playerTurn" => 31,
-            "trick23" => 41
-        ]
+        "transitions" => ["" => 31]
     ],
     31 => [
         "name" => "playerTurn",
@@ -116,10 +113,7 @@ $machinestates = [
         "type" => "activeplayer",
         "action" => "stPlayerTurn",
         "possibleactions" => ["playCard"],
-        "transitions" => [
-            "playCard" => 32,
-            "leadScuse" => 40
-        ],
+        "transitions" => [ "" => 32 ],
         'args' => 'argPlayerTurn'
     ],
     32 => [
@@ -130,7 +124,6 @@ $machinestates = [
         "updateGameProgression" => true,
         "transitions" => [
             "nextPlayer" => 31,
-            "nextPlayer23" => 41,
             "nextTrick" => 30,
             "endHand" => 50
         ]

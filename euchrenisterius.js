@@ -83,16 +83,15 @@ function (dojo, declare) {
                 let uniqueId = this.getCardUniqueId(suit, value)
                 this.playerHand.addToStockWithId(uniqueId, card.id)
             }
-            
 
             // Cards played on table
-            // for (i in this.gamedatas.cardsontable) {
-            //     let card = this.gamedatas.cardsontable[i];
-            //     var suit = card.type;
-            //     var value = card.type_arg;
-            //     var player_id = card.location_arg;
-            //     this.playCardOnTable(player_id, color, value, card.id);
-            // }
+            for (i in this.gamedatas.cardsontable) {
+                var card = this.gamedatas.cardsontable[i];
+                var color = card.type;
+                var value = card.type_arg;
+                var player_id = card.location_arg;
+                this.playCardOnTable(player_id, color, value, card.id);
+            }
 
             // Get contract
 
@@ -346,6 +345,8 @@ function (dojo, declare) {
             dojo.subscribe('newHand', this, 'notifyNewHand')
             dojo.subscribe('playCard', this, 'notifyPlayCard')
 
+            dojo.subscribe( 'giveAllCardsToPlayer', this, "notifyGiveAllCardsToPlayer" );
+
             // TODO: here, associate your game notifications with local methods
             
             // Example 1: standard notification handling
@@ -391,6 +392,20 @@ function (dojo, declare) {
                 id
             } = notif?.args?.card
             this.playCardOnTable(notif.args.player_id, suit, value, id);
+        },
+
+        notifyGiveAllCardsToPlayer : function(notif) {
+            // Move all cards on table to given table, then destroy them
+            var winner_id = notif.args.player_id;
+            self = this;
+            for ( var player_id in this.gamedatas.players) {
+                var anim = this.slideToObject('cardontable_' + player_id, 'playertable_avatar_' + winner_id);
+                dojo.connect(anim, 'onEnd', function(node) {
+                    // dojo.destroy(node);
+                    self.fadeOutAndDestroy(node, 500);
+                });
+                anim.play();
+            }
         },
 
 

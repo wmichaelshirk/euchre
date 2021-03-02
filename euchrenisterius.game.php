@@ -444,11 +444,15 @@ class euchrenisterius extends Table {
             $this->gamestate->changeActivePlayer( $best_value_player_id );
             self::giveExtraTime($best_value_player_id);
 
-            // Increment trick counter
-            self::incGameStateValue('tricks_played', 1);
+            // Increment trick counter 
+            // TODO: Check that this does what it's meant to do as I (George) edited it to stop a bug.
+            self::incGameStateValue('trickCount', 1);
 
+            // TODO: Check that we don't need the below.
+            // (I guess not, we shouldn't need to turn the trump card over during a trick!)
+            /*
             // If we have played the first trick, turn over the trump card
-            $tricksPlayed = self::getGameStateValue('tricks_played');
+            $tricksPlayed = self::getGameStateValue('trickCount');
             if ($tricksPlayed == 1) {
                 // Set the trump value to the card back
                 self::setGameStateValue('trumpValue', 15);
@@ -458,14 +462,15 @@ class euchrenisterius extends Table {
                     'color' => $trumpSuit
                 ]);
             }
+            */
 
             // Move all cards to "cardswon" of the given player and update database
-            self::DbQuery("UPDATE player SET player_trick_number = player_trick_number+1 WHERE player_id='$best_value_player_id'");
+            self::DbQuery("UPDATE player SET player_tricks = player_tricks+1 WHERE player_id='$best_value_player_id'");
             $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $best_value_player_id);
 
             // Get tricks won of best player
             $tricksWon = self::getUniqueValueFromDb(
-                "SELECT player_trick_number FROM player WHERE player_id='$best_value_player_id'"
+                "SELECT player_tricks FROM player WHERE player_id='$best_value_player_id'"
             );
 
             // Notify

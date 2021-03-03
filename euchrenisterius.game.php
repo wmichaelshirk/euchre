@@ -3,7 +3,8 @@
   *------
   * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel
   * Colin <ecolin@boardgamearena.com>
-  * Euchre implementation : © W Michael Shirk <wmichaelshirk@gmail.com>
+  * Euchre implementation : © W Michael Shirk <wmichaelshirk@gmail.com> &
+  *                           George Witty <jimblefredberry@gmail.com>
   *
   * This code has been produced on the BGA studio platform for use on
   * http://boardgamearena.com.  See http://en.boardgamearena.com/#!doc/Studio
@@ -70,7 +71,7 @@ class euchrenisterius extends Table {
         }
         $sql .= implode($values, ',');
         self::DbQuery($sql);
-        self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
+        self::reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
         self::reloadPlayersBasicInfos();
 
         // Maybe get rid of the above
@@ -153,8 +154,7 @@ class euchrenisterius extends Table {
         This method is called each time we are in a game state with the "updateGameProgression" property set to true
         (see states.inc.php)
     */
-    function getGameProgression()
-    {
+    function getGameProgression () {
         // TODO: compute and return the game progression
 
         return 0;
@@ -260,8 +260,9 @@ class euchrenisterius extends Table {
 ////////////
 
     /*
-        Each time a player is doing some game action, one of the methods below is called.
-        (note: each method below must match an input method in euchrenisterius.action.php)
+        Each time a player is doing some game action, one of the methods below 
+        is called. (note: each method below must match an input method in 
+        euchrenisterius.action.php)
     */
 
 
@@ -419,53 +420,42 @@ class euchrenisterius extends Table {
             // This is the end of the trick
             $cards_on_table = $this->cards->getCardsInLocation('cardsontable');
             $best_value = 0;
-            $best_value_player_id = null;
+            $trickWinnerId = null;
             $suitLed = self::getGameStateValue('suitLed');
             $trumpSuit = self::getGameStateValue('trumpSuit');
             foreach ($cards_on_table as $card) {
                 // If this is the first trump in the trick and trumps were not led
                 if ($card['type'] == $trumpSuit && $suitLed != $trumpSuit) {
                     $suitLed = $trumpSuit;
-                    $best_value_player_id = $card['location_arg'];
+                    $trickWinnerId = $card['location_arg'];
                     $best_value = $card['type_arg'];
                 }
                 // Otherwise:
                 // Note: type = card color
                 if ($card['type'] == $suitLed) {
-                    if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
-                        $best_value_player_id = $card ['location_arg']; 
+                    if ($trickWinnerId === null || $card['type_arg'] > $best_value) {
+                        $trickWinnerId = $card['location_arg']; 
                         // Note: location_arg = player who played this card on table
-                        $best_value = $card ['type_arg']; // Note: type_arg = value of the card
+                        $best_value = $card['type_arg']; // Note: type_arg = value of the card
                     }
                 }
             }
             
             // Active this player => he's the one who starts the next trick
-            $this->gamestate->changeActivePlayer( $best_value_player_id );
-            self::giveExtraTime($best_value_player_id);
+            $this->gamestate->changeActivePlayer($trickWinnerId);
+            self::giveExtraTime($trickWinnerId);
 
-            // Increment trick counter
-            self::incGameStateValue('tricks_played', 1);
+            // Increment trick counter 
+            self::incGameStateValue('trickCount', 1);
 
-            // If we have played the first trick, turn over the trump card
-            $tricksPlayed = self::getGameStateValue('tricks_played');
-            if ($tricksPlayed == 1) {
-                // Set the trump value to the card back
-                self::setGameStateValue('trumpValue', 15);
-
-                // Change the trump card back by using the chooseTrumpSymbol notification
-                self::notifyAllPlayers('chooseTrumpSymbol', '' , [
-                    'color' => $trumpSuit
-                ]);
-            }
 
             // Move all cards to "cardswon" of the given player and update database
-            self::DbQuery("UPDATE player SET player_trick_number = player_trick_number+1 WHERE player_id='$best_value_player_id'");
-            $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $best_value_player_id);
+            self::DbQuery("UPDATE player SET player_tricks = player_tricks+1 WHERE player_id='$trickWinnerId'");
+            $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $trickWinnerId);
 
             // Get tricks won of best player
             $tricksWon = self::getUniqueValueFromDb(
-                "SELECT player_trick_number FROM player WHERE player_id='$best_value_player_id'"
+                "SELECT player_tricks FROM player WHERE player_id='$trickWinnerId'"
             );
 
             // Notify
@@ -473,12 +463,12 @@ class euchrenisterius extends Table {
             //  before we move all cards to the winner (during the second)
             $players = self::loadPlayersBasicInfos();
             self::notifyAllPlayers('trickWin', clienttranslate('${player_name} wins the trick'), [
-                'player_id' => $best_value_player_id,
-                'player_name' => $players[ $best_value_player_id ]['player_name'],
+                'player_id' => $trickWinnerId,
+                'player_name' => $players[$trickWinnerId]['player_name'],
                 'tricksWon' => $tricksWon
             ]);            
             self::notifyAllPlayers('giveAllCardsToPlayer', '', [
-                'player_id' => $best_value_player_id
+                'player_id' => $trickWinnerId
              ]);
 
 

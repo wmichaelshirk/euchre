@@ -2,7 +2,8 @@
  *------
  * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel 
  * Colin <ecolin@boardgamearena.com>
- * euchrenisterius implementation : © W Michael Shirk <wmichaelshirk@gmail.com>
+ * euchrenisterius implementation: © W Michael Shirk <wmichaelshirk@gmail.com> &
+ *                                   George Witty <jimblefredberry@gmail.com>
  *
  * This code has been produced on the BGA studio platform for use on 
  * http://boardgamearena.com. See http://en.boardgamearena.com/#!doc/Studio for 
@@ -27,14 +28,16 @@ function (dojo, declare) {
         /*
             setup:
             
-            This method must set up the game user interface according to current game situation specified
-            in parameters.
+            This method must set up the game user interface according to current
+            game situation specified in parameters.
             
-            The method is called each time the game interface is displayed to a player, ie:
+            The method is called each time the game interface is displayed to a 
+            player, ie:
             _ when the game starts
             _ when a player refreshes the game page (F5)
             
-            "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
+            "gamedatas" argument contains all datas retrieved by your 
+            "getAllDatas" PHP method.
         */
         
         setup: function (gamedatas) {
@@ -83,16 +86,15 @@ function (dojo, declare) {
                 let uniqueId = this.getCardUniqueId(suit, value)
                 this.playerHand.addToStockWithId(uniqueId, card.id)
             }
-            
 
             // Cards played on table
-            // for (i in this.gamedatas.cardsontable) {
-            //     let card = this.gamedatas.cardsontable[i];
-            //     var suit = card.type;
-            //     var value = card.type_arg;
-            //     var player_id = card.location_arg;
-            //     this.playCardOnTable(player_id, color, value, card.id);
-            // }
+            for (i in this.gamedatas.cardsontable) {
+                var card = this.gamedatas.cardsontable[i];
+                var suit = card.type;
+                var rank = card.type_arg;
+                var player_id = card.location_arg;
+                this.playCardOnTable(player_id, suit, rank, card.id);
+            }
 
             // Get contract
 
@@ -345,6 +347,9 @@ function (dojo, declare) {
             dojo.subscribe('newDeal', this, 'notifyNewDeal')
             dojo.subscribe('newHand', this, 'notifyNewHand')
             dojo.subscribe('playCard', this, 'notifyPlayCard')
+            dojo.subscribe('trickWin', this, 'notifyTrickWin')
+            this.notifqueue.setSynchronous('trickWin', 1000)
+            dojo.subscribe('giveAllCardsToPlayer', this, "notifyGiveAllCardsToPlayer");
 
             // TODO: here, associate your game notifications with local methods
             
@@ -370,7 +375,6 @@ function (dojo, declare) {
             // this.dealer = notif.args.dealer_id
 
             // activate all players, inactive inactive player
-
         },
 
         notifyNewHand: function (notif) {
@@ -385,7 +389,6 @@ function (dojo, declare) {
         notifyPlayCard: function (notif) {
             // play card on the table
             const {
-
                 type: suit,
                 type_arg: value,
                 id
@@ -393,6 +396,38 @@ function (dojo, declare) {
             this.playCardOnTable(notif.args.player_id, suit, value, id);
         },
 
+        notifyTrickWin: function (notif) {
+            // this.updatePlayerTrickCount(notif.args.player_id,
+            //     notif.args.trick_won)
+
+            // $('trick_count_wrap').innerHTML =
+            //     dojo.string.substitute( _('Trick ${n} of 25'), {
+            //         n: Math.min(Number(notif.args.next) + 1, 25)
+            //     })
+
+            // BELOTE COINCHE: clear the old tricks from logs.
+            // var me = this
+			// setTimeout(function() {
+			// 	me.giveAllCardsToPlayer(notif.args.player_id).then(function() {
+			// 		me.clearOldTricksLogs(notif.args.trick_count_value - 1)
+			// 		me.updatePlayerTrickCount(notif.args.player_id, notif.args.trick_won)
+			// 	})
+			// }, 1500)
+        },
+
+        notifyGiveAllCardsToPlayer: function (notif) {
+            // Move all cards on table to given table, then destroy them
+            const winnerId = notif.args.player_id;
+            this.gamedatas.players.forEach(playerId => {
+                const anim = this.slideToObject(
+                    `cardontable_${playerId}`, 
+                    `playertable_avatar_${winnerId}`
+                )
+                dojo.connect(anim, 'onEnd', 
+                    node => this.fadeOutAndDestroy(node, 500))
+                anim.play()
+            })
+        },
 
    })
 })

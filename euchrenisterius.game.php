@@ -3,7 +3,8 @@
   *------
   * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel
   * Colin <ecolin@boardgamearena.com>
-  * Euchre implementation : © W Michael Shirk <wmichaelshirk@gmail.com>
+  * Euchre implementation : © W Michael Shirk <wmichaelshirk@gmail.com> &
+  *                           George Witty <jimblefredberry@gmail.com>
   *
   * This code has been produced on the BGA studio platform for use on
   * http://boardgamearena.com.  See http://en.boardgamearena.com/#!doc/Studio
@@ -70,7 +71,7 @@ class euchrenisterius extends Table {
         }
         $sql .= implode($values, ',');
         self::DbQuery($sql);
-        self::reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
+        self::reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
         self::reloadPlayersBasicInfos();
 
         // Maybe get rid of the above
@@ -126,14 +127,19 @@ class euchrenisterius extends Table {
     protected function getAllDatas() {
         $result = [];
 
-        $current_player_id = self::getCurrentPlayerId();    // !! We must only return informations visible by this player !!
+        // !! We must only return informations visible by this player !!
+        $current_player_id = self::getCurrentPlayerId();    
 
         // Get information about players
-        // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
+        // Note: you can retrieve some extra field you added for "player" table 
+        // in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score FROM player ";
-        $result['players'] = self::getCollectionFromDb( $sql );
-
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
+        $result['players'] = self::getCollectionFromDb($sql);
+        $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
+        $result['cardsontable'] = $this->cards->getCardsInLocation('cardsontable');
+        $result['trumpSuit'] = self::getGameStateValue('trumpSuit');    
+        $result['dealerId'] = self::getGameStateValue('dealerId');
+        $result['suits'] = $this->suits;
 
         return $result;
     }
@@ -148,8 +154,7 @@ class euchrenisterius extends Table {
         This method is called each time we are in a game state with the "updateGameProgression" property set to true
         (see states.inc.php)
     */
-    function getGameProgression()
-    {
+    function getGameProgression () {
         // TODO: compute and return the game progression
 
         return 0;
@@ -197,6 +202,57 @@ class euchrenisterius extends Table {
         return $players[$player_id]['player_name'];
     }
 
+    function assertCardPlay($cardId) {
+        $playerId = self::getActivePlayerId();
+        $playerHand = $this->cards->getCardsInLocation('hand', $playerId);
+
+        $isInHand = false;
+        $suitLed = self::getGameStateValue('suitLed');
+        $atLeastOneOfSuitLed = false;
+        $card = null;
+
+        foreach ($playerHand as $currentCard) {
+            if ($currentCard['id'] == $cardId) {
+                $isInHand = true;
+                $card = $currentCard;
+            }
+            if ($currentCard['type'] == $suitLed) {
+                $atLeastOneOfSuitLed = true;
+            }
+        }
+
+        if (!$isInHand) {
+            throw new BgaUserException(self::_("This card is not in your hand"));
+        }
+
+        if ($suitLed != 0) {
+            if ($card['type'] != $suitLed) {
+                // The card does not match the suit led, and
+                // the player has at least one card of the needed suit
+                if ($atLeastOneOfSuitLed) {
+                    throw new BgaUserException(sprintf(self::_("You must play a %s"),
+                        $this->suits[$suitLed]['nametr']), true);
+                }
+            }
+        }
+    }
+
+    private function getPossibleCardsToPlay($playerId) {
+		// Loop the player hand, stopping at the first card which can be played
+		$playerCards = $this->cards->getCardsInLocation('hand', $playerId);
+		$possibleCards = [];
+		foreach ($playerCards as $playerCard) {
+			try {
+				$this->assertCardPlay($playerCard['id']);
+			} catch (\Exception $e) {
+				continue;
+			}
+			$possibleCards[] = $playerCard;
+		}
+		return $possibleCards;
+    }
+
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -204,35 +260,39 @@ class euchrenisterius extends Table {
 ////////////
 
     /*
-        Each time a player is doing some game action, one of the methods below is called.
-        (note: each method below must match an input method in euchrenisterius.action.php)
+        Each time a player is doing some game action, one of the methods below 
+        is called. (note: each method below must match an input method in 
+        euchrenisterius.action.php)
     */
 
-    /*
 
-    Example:
+    function playCard($card_id) {
+        self::checkAction("playCard");
+        $playerId = self::getActivePlayerId();
 
-    function playCard( $card_id )
-    {
-        // Check that this is the player's turn and that it is a "possible action" at this game state (see states.inc.php)
-        self::checkAction( 'playCard' );
+        // Check rules for card play
+        $this->assertCardPlay($card_id);
 
-        $player_id = self::getActivePlayerId();
+        $this->cards->moveCard($card_id, 'cardsontable', $playerId);
 
-        // Add your game logic to play a card there
-        ...
+        $currentCard = $this->cards->getCard($card_id);
+        $suitLed = self::getGameStateValue('suitLed') ;
+        if ($suitLed == 0) {
+           self::setGameStateValue('suitLed', $currentCard['type']);
+        }
 
-        // Notify all players about the card played
-        self::notifyAllPlayers( "cardPlayed", clienttranslate( '${player_name} plays ${card_name}' ), array(
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName(),
-            'card_name' => $card_name,
-            'card_id' => $card_id
-        ) );
+        self::notifyAllPlayers('playCard',
+            clienttranslate('${player_name} plays ${card_name}'), [
+                'player_name' => self::getActivePlayerName(),
+                'player_id' => $playerId,
+                'card' => $currentCard,
+                'card_name' => '',
+            ]
+        );
 
+        // Next player
+        $this->gamestate->nextState();
     }
-
-    */
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -240,17 +300,30 @@ class euchrenisterius extends Table {
 ////////////
 
     /*
-        Here, you can create methods defined as "game state arguments" (see "args" property in states.inc.php).
-        These methods function is to return some additional information that is specific to the current
-        game state.
+        Here, you can create methods defined as "game state arguments" (see 
+        "args" property in states.inc.php).
+        These methods function is to return some additional information that is 
+        specific to the current game state.
     */
+
+    function argPlayerTurn() {
+		// On player's turn, list possible cards
+		return [
+			'_private' => [
+				'active' => [
+					'possibleCards' => $this->getPossibleCardsToPlay(
+						self::getActivePlayerId()
+					),
+				],
+			],
+		];
+    }
 
     /*
 
     Example for game state "MyGameState":
 
-    function argMyGameState()
-    {
+    function argMyGameState() {
         // Get some values from the current game situation in database...
 
         // return values:
@@ -306,6 +379,116 @@ class euchrenisterius extends Table {
     }
 
 
+
+    /*
+     * 29 - Start the play, eldest leads
+     */
+    function stEldestLeads() {
+        $this->gamestate->changeActivePlayer(self::getGameStateValue('eldestId'));
+        $this->gamestate->nextState();
+    }
+
+    /*
+     * 30 - Start a new trick -
+     * Clear the suit led; set the next player to the previous winner.
+     */
+    function stNewTrick() {
+        self::setGameStateValue('suitLed', 0);
+        $this->gamestate->nextState();
+    }
+
+    /*
+     * 31 - Player turn -
+     * Send the signal that a check for automatic play can be done on JS
+     * The player will automatically play if he selected one card before
+     * (an error will be displayed if invalid)
+     */
+    function stPlayerTurn() {
+		$playerId = self::getActivePlayerId();
+        self::notifyPlayer($playerId, 'checkForAutomaticPlay', '', []);
+    }
+
+
+    /*
+     * 32 - Activate the next [trick?] player,
+     * OR end the trick and go to the next trick
+     * OR end the hand
+     */
+    function stNextPlayer() {
+        // Active next player OR end the trick and go to the next trick OR end the hand
+        if ($this->cards->countCardInLocation('cardsontable') == 4) {
+            // This is the end of the trick
+            $cards_on_table = $this->cards->getCardsInLocation('cardsontable');
+            $best_value = 0;
+            $trickWinnerId = null;
+            $suitLed = self::getGameStateValue('suitLed');
+            $trumpSuit = self::getGameStateValue('trumpSuit');
+            foreach ($cards_on_table as $card) {
+                // If this is the first trump in the trick and trumps were not led
+                if ($card['type'] == $trumpSuit && $suitLed != $trumpSuit) {
+                    $suitLed = $trumpSuit;
+                    $trickWinnerId = $card['location_arg'];
+                    $best_value = $card['type_arg'];
+                }
+                // Otherwise:
+                // Note: type = card color
+                if ($card['type'] == $suitLed) {
+                    if ($trickWinnerId === null || $card['type_arg'] > $best_value) {
+                        $trickWinnerId = $card['location_arg']; 
+                        // Note: location_arg = player who played this card on table
+                        $best_value = $card['type_arg']; // Note: type_arg = value of the card
+                    }
+                }
+            }
+            
+            // Active this player => he's the one who starts the next trick
+            $this->gamestate->changeActivePlayer($trickWinnerId);
+            self::giveExtraTime($trickWinnerId);
+
+            // Increment trick counter 
+            self::incGameStateValue('trickCount', 1);
+
+
+            // Move all cards to "cardswon" of the given player and update database
+            self::DbQuery("UPDATE player SET player_tricks = player_tricks+1 WHERE player_id='$trickWinnerId'");
+            $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $trickWinnerId);
+
+            // Get tricks won of best player
+            $tricksWon = self::getUniqueValueFromDb(
+                "SELECT player_tricks FROM player WHERE player_id='$trickWinnerId'"
+            );
+
+            // Notify
+            // Note: we use 2 notifications here in order we can pause the display during the first notification
+            //  before we move all cards to the winner (during the second)
+            $players = self::loadPlayersBasicInfos();
+            self::notifyAllPlayers('trickWin', clienttranslate('${player_name} wins the trick'), [
+                'player_id' => $trickWinnerId,
+                'player_name' => $players[$trickWinnerId]['player_name'],
+                'tricksWon' => $tricksWon
+            ]);            
+            self::notifyAllPlayers('giveAllCardsToPlayer', '', [
+                'player_id' => $trickWinnerId
+             ]);
+
+
+            if ($this->cards->countCardInLocation('hand') == 0) {
+                // End of the hand
+                $this->gamestate->nextState("endHand");
+            } else {
+                // End of the trick
+                $this->gamestate->nextState("nextTrick");
+            }
+        } else {
+            // Standard case (not the end of the trick)
+            // => just active the next player
+            $playerId = self::activeNextPlayer();
+            self::giveExtraTime($playerId);
+            $this->gamestate->nextState('nextPlayer');
+        }
+    }
+
+
 // stEndHand
 
 //////////////////////////////////////////////////////////////////////////////
@@ -315,18 +498,21 @@ class euchrenisterius extends Table {
     /*
         zombieTurn:
 
-        This method is called each time it is the turn of a player who has quit the game (= "zombie" player).
-        You can do whatever you want in order to make sure the turn of this player ends appropriately
-        (ex: pass).
+        This method is called each time it is the turn of a player who has quit 
+        the game (= "zombie" player).
+        You can do whatever you want in order to make sure the turn of this 
+        player ends appropriately (ex: pass).
 
-        Important: your zombie code will be called when the player leaves the game. This action is triggered
-        from the main site and propagated to the gameserver from a server, not from a browser.
-        As a consequence, there is no current player associated to this action. In your zombieTurn function,
-        you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message.
+        Important: your zombie code will be called when the player leaves the 
+        game. This action is triggered from the main site and propagated to the 
+        gameserver from a server, not from a browser.
+        As a consequence, there is no current player associated to this action.
+        In your zombieTurn function, you must _never_ use getCurrentPlayerId() 
+        or getCurrentPlayerName(), otherwise it will fail with a "Not logged" 
+        error message.
     */
 
-    function zombieTurn( $state, $active_player )
-    {
+    function zombieTurn($state, $active_player) {
     	$statename = $state['name'];
 
         if ($state['type'] === "activeplayer") {
@@ -346,49 +532,44 @@ class euchrenisterius extends Table {
             return;
         }
 
-        throw new feException( "Zombie mode not supported at this game state: ".$statename );
+        throw new feException("Zombie mode not supported at this game state: ".$statename );
     }
 
-///////////////////////////////////////////////////////////////////////////////////:
+////////////////////////////////////////////////////////////////////////////////
 ////////// DB upgrade
 //////////
 
     /*
         upgradeTableDb:
 
-        You don't have to care about this until your game has been published on BGA.
-        Once your game is on BGA, this method is called everytime the system detects a game running with your old
-        Database scheme.
-        In this case, if you change your Database scheme, you just have to apply the needed changes in order to
-        update the game database and allow the game to continue to run with your new version.
-
+        You don't have to care about this until your game has been published on 
+        BGA. Once your game is on BGA, this method is called everytime the 
+        system detects a game running with your old Database scheme.
+        In this case, if you change your Database scheme, you just have to apply
+        the needed changes in order to update the game database and allow the 
+        game to continue to run with your new version.
     */
 
-    function upgradeTableDb( $from_version )
-    {
-        // $from_version is the current version of this game database, in numerical form.
-        // For example, if the game was running with a release of your game named "140430-1345",
-        // $from_version is equal to 1404301345
+    function upgradeTableDb($from_version) {
+        // $from_version is the current version of this game database, in 
+        // numerical form. For example, if the game was running with a release 
+        // of your game named "140430-1345", $from_version is equal to 
+        // 1404301345
 
         // Example:
-//        if( $from_version <= 1404301345 )
-//        {
-//            // ! important ! Use DBPREFIX_<table_name> for all tables
-//
-//            $sql = "ALTER TABLE DBPREFIX_xxxxxxx ....";
-//            self::applyDbUpgradeToAllDB( $sql );
-//        }
-//        if( $from_version <= 1405061421 )
-//        {
-//            // ! important ! Use DBPREFIX_<table_name> for all tables
-//
-//            $sql = "CREATE TABLE DBPREFIX_xxxxxxx ....";
-//            self::applyDbUpgradeToAllDB( $sql );
-//        }
-//        // Please add your future database scheme changes here
-//
-//
+        // if ( $from_version <= 1404301345 ) {
+        //     // ! important ! Use DBPREFIX_<table_name> for all tables
 
+        //     $sql = "ALTER TABLE DBPREFIX_xxxxxxx ....";
+        //     self::applyDbUpgradeToAllDB( $sql );
+        // }
+        // if ( $from_version <= 1405061421 ) {
+        //     // ! important ! Use DBPREFIX_<table_name> for all tables
+
+        //     $sql = "CREATE TABLE DBPREFIX_xxxxxxx ....";
+        //     self::applyDbUpgradeToAllDB( $sql );
+        // }
+        // // Please add your future database scheme changes here
 
     }
 }

@@ -13,32 +13,33 @@
 
 $this->suits = [
     1 => [
-        'name' => clienttranslate('Hearts'),
-        'nameof' => clienttranslate('of Hearts'),
-        'nametr' => self::_('Heart'),
-        'symbol' => '&hearts;'
-    ],
-    
-    2 => [
-        'name' => clienttranslate('Clubs'),
-        'nameof' => clienttranslate('of Clubs'),
-        'nametr' => self::_('Club'),
-        'symbol' => '&clubs;'
-    ],
-    
-    3 => [
-        'name' => clienttranslate('Diamonds'),
-        'nameof' => clienttranslate('of Diamonds'),
-        'nametr' => self::_('Diamond'),
-        'symbol' => '&diams;'
-    ],
-    
-    4 => [
         'name' => clienttranslate('Spades'),
         'nameof' => clienttranslate('of Spades'),
         'nametr' => self::_('Spade'),
         'symbol' => '&spades;'
     ],
+
+    2 => [
+        'name' => clienttranslate('Hearts'),
+        'nameof' => clienttranslate('of Hearts'),
+        'nametr' => self::_('Heart'),
+        'symbol' => '&hearts;'
+    ],
+
+    3 => [
+        'name' => clienttranslate('Clubs'),
+        'nameof' => clienttranslate('of Clubs'),
+        'nametr' => self::_('Club'),
+        'symbol' => '&clubs;'
+    ],
+
+    4 => [
+        'name' => clienttranslate('Diamonds'),
+        'nameof' => clienttranslate('of Diamonds'),
+        'nametr' => self::_('Diamond'),
+        'symbol' => '&diams;'
+    ],
+
 ];
 
 $this->ranks = [

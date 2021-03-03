@@ -94,7 +94,7 @@ class euchrenisterius extends Table {
 			'nbr' => 0,
         ]]; 
         foreach ($this->suits as $suitId => $suit) {
-			// spade, heart, diamond, club
+			// spade, heart, club, diamond
 			for ($value = 7; $value <= 14; $value++) {
 				//  7, 8, 9, 10, J, Q, K, A
 				$cards[] = [

@@ -50,6 +50,9 @@ function (dojo, declare) {
                 // TODO: Setting up players boards if needed
             }
             
+            this.ranks = gamedatas.ranks
+            this.suits = gamedatas.suits
+
             // Player hand
             this.playerHand = new ebg.stock();
             this.playerHand.create(this, $('myhand'), 
@@ -97,13 +100,13 @@ function (dojo, declare) {
             }
 
             // Get contract
-
+            console.log(gamedatas)
             
             // Show the trump card (or suit) if it has been chosen 
-            // var trumpSuit = this.gamedatas.trumpSuit;
-            // var trumpValue = this.gamedatas.trumpValue;
-            // this.showTrumpSymbol(trumpSuit);
-            // this.showTrumpCard(trumpSuit, trumpValue);     
+            var trumpSuit = this.gamedatas.trumpSuit;
+            var trumpValue = this.gamedatas.trumpValue;
+            this.showTrumpSymbol(trumpSuit);
+            this.showTrumpCard(trumpSuit, trumpValue);     
  
 
             // Create bids TODO: Probably there is a better way to do this...
@@ -287,6 +290,86 @@ function (dojo, declare) {
             ).play()
         },
 
+
+        showTrumpCard : function(suit, rank) {
+            if (dojo.byId('trumpcardontable') != null) {
+                // If trump card already there, remove it to stop cluttering
+                dojo.destroy('trumpcardontable');
+            }
+            if (rank == 15) {
+                // If the trump rank is set to card back, make sure it is shown
+                suit = 3;
+            }
+            if (suit == 0) {
+                // If trump suit is no trumps, set to card back
+                suit = 3;
+                rank = 15;
+            }
+            dojo.place(this.format_block('jstpl_trumpcardontable', {
+                x: this.cardwidth * (rank - 2),
+                y: this.cardheight * (suit -1),
+            }), 'trumpCard');
+            // If trump card is not the placeholder for no trumps, also update the trump symbol
+            if (suit > 0 && rank != 15) {
+                this.showTrumpSymbol(color);
+            }
+        },
+
+        showTrumpSymbol: function(suit) {
+            if (dojo.byId('trumpsymbolontable') != null) {
+                dojo.destroy('trumpsymbolontable');
+            }
+            dojo.place(this.format_block('jstpl_trumpsymbolontable', { suit }),
+                'trumpSuit')
+        },
+
+
+
+        // @Override: client side magic to massage log arguments into
+        // displayable localized text
+        format_string_recursive: function (log, args) {
+            try {
+                if (log && args && !args.processed) {
+                    args.processed = true;
+
+                    // for linking back to the results of the last game
+                    if (args.seeResult !== undefined) {
+                        args.copyOfResult = args.seeResult; // HACK: Notification handler needs this
+                        args.seeResult = this.linkToResult(args.n, args.seeResult);
+                    }
+
+                    // Format cards
+                    if (args.card !== undefined) {
+                        let name, colour, symbol
+                        const { type: suit, type_arg: rank } = args.card
+                       
+                        name = this.ranks?.[rank] + this.suits[suit].symbol
+                        colour = (suit == 1 || suit == 3) ? 'black' : 'red'
+
+                        args.card_name = dojo.string
+                            .substitute('<strong style="color:${colour};">${name}</strong>', {
+                                colour: colour,
+                                name: name
+                            })
+                    }
+
+                    // if (args.display_suit !== undefined) {
+                    //     let display_suit = args.display_suit
+                    //     let name, colour, symbol
+                    //     name = this.suits[display_suit].name
+                    //     symbol = this.suits[display_suit].symbol
+                    //     colour = (display_suit == 1 || display_suit == 3) ? 'red' : 'black';
+
+                    //     args.display_suit = dojo.string.substitute('${name} <strong style="color:${colour};">${symbol}</strong>', { symbol, colour, name });
+                    // }
+
+                }
+            } catch (e) {
+                console.error('Exception while formatting "%o" with "%o":\n%o', log, args, e);
+            }
+            return this.inherited(arguments);
+        }, 
+ 
         ///////////////////////////////////////////////////
         //// Player's action
         
@@ -367,6 +450,7 @@ function (dojo, declare) {
         // TODO: from this point and below, you can write your game notifications handling methods
         
         notifyNewDeal: function (notif) {
+            console.log(notif)
             // this.updateHandCounter(notif.args.current_hand,
             //     notif.args.hands_to_play);
             // for ( let player_id in this.gamedatas.players) {

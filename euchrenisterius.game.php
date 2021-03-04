@@ -140,7 +140,7 @@ class euchrenisterius extends Table {
         $result['trumpSuit'] = self::getGameStateValue('trumpSuit');    
         $result['dealerId'] = self::getGameStateValue('dealerId');
         $result['suits'] = $this->suits;
-
+        $result['ranks'] = $this->ranks;
         return $result;
     }
 
@@ -358,14 +358,14 @@ class euchrenisterius extends Table {
         }
 
         // Reset values
-		self::setGameStateInitialValue('trumpSuit', 0);
+        $turnUp = $this->cards->getCardOnTop('deck');
+		self::setGameStateInitialValue('trumpSuit', $turnUp['type']);
         self::setGameStateInitialValue('suitLed', 0);
         self::setGameStateInitialValue('trickCount', 0);
         
         // Announce start of hand.
         $dealer = self::getGameStateValue('dealerId');
         $eldest = self::getGameStateValue('eldestId');
-        $turnUp = $this->cards->getCardOnTop('deck');
         self::notifyAllPlayers('newDeal', clienttranslate('<hr/>${player_name} deals a new hand and turns the ${card_name}.<hr/>'), [
             'dealer_id' => $dealer,
             'player_name' => self::getPlayerName($dealer),
@@ -418,12 +418,12 @@ class euchrenisterius extends Table {
         // Active next player OR end the trick and go to the next trick OR end the hand
         if ($this->cards->countCardInLocation('cardsontable') == 4) {
             // This is the end of the trick
-            $cards_on_table = $this->cards->getCardsInLocation('cardsontable');
+            $cardsOnTable = $this->cards->getCardsInLocation('cardsontable');
             $best_value = 0;
             $trickWinnerId = null;
             $suitLed = self::getGameStateValue('suitLed');
             $trumpSuit = self::getGameStateValue('trumpSuit');
-            foreach ($cards_on_table as $card) {
+            foreach ($cardsOnTable as $card) {
                 // If this is the first trump in the trick and trumps were not led
                 if ($card['type'] == $trumpSuit && $suitLed != $trumpSuit) {
                     $suitLed = $trumpSuit;
@@ -447,7 +447,6 @@ class euchrenisterius extends Table {
 
             // Increment trick counter 
             self::incGameStateValue('trickCount', 1);
-
 
             // Move all cards to "cardswon" of the given player and update database
             self::DbQuery("UPDATE player SET player_tricks = player_tricks+1 WHERE player_id='$trickWinnerId'");
@@ -488,8 +487,15 @@ class euchrenisterius extends Table {
         }
     }
 
+    function stEndHand() {
+        // TODO
+        // Add up the scores, update everything
+        // if someone hit the target option, end the game; otherwise 
+        // go to the next hand!
+        $this->gamestate->nextState('endGame');
+    }
 
-// stEndHand
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie

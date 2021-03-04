@@ -94,7 +94,7 @@ var jstpl_some_game_item='<div class="my_game_item" id="my_game_item_${MY_ITEM_I
 
 var jstpl_cardontable = '<div class="cardontable" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px"></div>';
 var jstpl_trumpcardontable = '<div class = "cardontable" id="trumpcardontable" style="background-position:-${x}px -${y}px"></div>';
-var jstpl_trumpsymbolontable = '<div class ="symbolontable_${suit}" id="trumpsymbolontable"></div>';
+var jstpl_trumpsymbolontable = '<div class ="symbolontable_${suit}" id="trumpsymbolontable">${symbol}</div>';
 var jstpl_contractontable = '<div id="contractontable" style="display: flex;justify-content: center;align-items: center;height: 40px;"><strong>${contract}</strong></div>';
 
 </script>  

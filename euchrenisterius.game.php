@@ -26,8 +26,10 @@ class euchrenisterius extends Table {
             'eldestId' => 11,
 
             'trumpSuit' => 12,
-            'suitLed' => 13,
-            'trickCount' => 14
+            'trumpTurnup' => 13,
+
+            'suitLed' => 14,
+            'trickCount' => 15
 
 			// Options
             // 'gameLength'
@@ -47,7 +49,7 @@ class euchrenisterius extends Table {
     }
 
     /*
-        This method is called only once, when a new game is launched. In this 
+        This method is called only once, when a new game is launched. In this
         method, you must setup the game according to the game rules, so that
         the game is ready to be played.
     */
@@ -83,16 +85,17 @@ class euchrenisterius extends Table {
 		self::setGameStateInitialValue('dealerId', $firstDealerId);
 		self::setGameStateInitialValue('eldestId', self::getPlayerAfter($firstDealerId));
 		self::setGameStateInitialValue('trumpSuit', 0);
+        self::setGameStateInitialValue('trumpTurnup', 0);
         self::setGameStateInitialValue('suitLed', 0);
         self::setGameStateInitialValue('trickCount', 0);
-        
+
         // build deck
         // Joker
         $cards = [[
             'type' => 0,
 			'type_arg' => 0,
 			'nbr' => 0,
-        ]]; 
+        ]];
         foreach ($this->suits as $suitId => $suit) {
 			// spade, heart, club, diamond
 			for ($value = 7; $value <= 14; $value++) {
@@ -128,16 +131,18 @@ class euchrenisterius extends Table {
         $result = [];
 
         // !! We must only return informations visible by this player !!
-        $current_player_id = self::getCurrentPlayerId();    
+        $current_player_id = self::getCurrentPlayerId();
 
         // Get information about players
-        // Note: you can retrieve some extra field you added for "player" table 
+        // Note: you can retrieve some extra field you added for "player" table
         // in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb($sql);
         $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
         $result['cardsontable'] = $this->cards->getCardsInLocation('cardsontable');
-        $result['trumpSuit'] = self::getGameStateValue('trumpSuit');    
+        $result['trumpSuit'] = self::getGameStateValue('trumpSuit');
+        $result['trumpTurnup'] = self::getGameStateValue('trumpTurnup');
+
         $result['dealerId'] = self::getGameStateValue('dealerId');
         $result['suits'] = $this->suits;
         $result['ranks'] = $this->ranks;
@@ -260,8 +265,8 @@ class euchrenisterius extends Table {
 ////////////
 
     /*
-        Each time a player is doing some game action, one of the methods below 
-        is called. (note: each method below must match an input method in 
+        Each time a player is doing some game action, one of the methods below
+        is called. (note: each method below must match an input method in
         euchrenisterius.action.php)
     */
 
@@ -300,9 +305,9 @@ class euchrenisterius extends Table {
 ////////////
 
     /*
-        Here, you can create methods defined as "game state arguments" (see 
+        Here, you can create methods defined as "game state arguments" (see
         "args" property in states.inc.php).
-        These methods function is to return some additional information that is 
+        These methods function is to return some additional information that is
         specific to the current game state.
     */
 
@@ -359,10 +364,11 @@ class euchrenisterius extends Table {
 
         // Reset values
         $turnUp = $this->cards->getCardOnTop('deck');
-		self::setGameStateInitialValue('trumpSuit', $turnUp['type']);
-        self::setGameStateInitialValue('suitLed', 0);
-        self::setGameStateInitialValue('trickCount', 0);
-        
+		self::setGameStateValue('trumpSuit', $turnUp['type']);
+        self::setGameStateValue('trumpTurnup', $turnUp['type_arg']);
+        self::setGameStateValue('suitLed', 0);
+        self::setGameStateValue('trickCount', 0);
+
         // Announce start of hand.
         $dealer = self::getGameStateValue('dealerId');
         $eldest = self::getGameStateValue('eldestId');
@@ -370,7 +376,7 @@ class euchrenisterius extends Table {
             'dealer_id' => $dealer,
             'player_name' => self::getPlayerName($dealer),
             'eldest' => $eldest,
-            'turnUp' => $turnUp,
+            'card' => $turnUp,
             'card_name' => '',
         ]);
 
@@ -434,18 +440,18 @@ class euchrenisterius extends Table {
                 // Note: type = card color
                 if ($card['type'] == $suitLed) {
                     if ($trickWinnerId === null || $card['type_arg'] > $best_value) {
-                        $trickWinnerId = $card['location_arg']; 
+                        $trickWinnerId = $card['location_arg'];
                         // Note: location_arg = player who played this card on table
                         $best_value = $card['type_arg']; // Note: type_arg = value of the card
                     }
                 }
             }
-            
+
             // Active this player => he's the one who starts the next trick
             $this->gamestate->changeActivePlayer($trickWinnerId);
             self::giveExtraTime($trickWinnerId);
 
-            // Increment trick counter 
+            // Increment trick counter
             self::incGameStateValue('trickCount', 1);
 
             // Move all cards to "cardswon" of the given player and update database
@@ -465,7 +471,7 @@ class euchrenisterius extends Table {
                 'player_id' => $trickWinnerId,
                 'player_name' => $players[$trickWinnerId]['player_name'],
                 'tricksWon' => $tricksWon
-            ]);            
+            ]);
             self::notifyAllPlayers('giveAllCardsToPlayer', '', [
                 'player_id' => $trickWinnerId
              ]);
@@ -490,7 +496,7 @@ class euchrenisterius extends Table {
     function stEndHand() {
         // TODO
         // Add up the scores, update everything
-        // if someone hit the target option, end the game; otherwise 
+        // if someone hit the target option, end the game; otherwise
         // go to the next hand!
         $this->gamestate->nextState('endGame');
     }
@@ -504,17 +510,17 @@ class euchrenisterius extends Table {
     /*
         zombieTurn:
 
-        This method is called each time it is the turn of a player who has quit 
+        This method is called each time it is the turn of a player who has quit
         the game (= "zombie" player).
-        You can do whatever you want in order to make sure the turn of this 
+        You can do whatever you want in order to make sure the turn of this
         player ends appropriately (ex: pass).
 
-        Important: your zombie code will be called when the player leaves the 
-        game. This action is triggered from the main site and propagated to the 
+        Important: your zombie code will be called when the player leaves the
+        game. This action is triggered from the main site and propagated to the
         gameserver from a server, not from a browser.
         As a consequence, there is no current player associated to this action.
-        In your zombieTurn function, you must _never_ use getCurrentPlayerId() 
-        or getCurrentPlayerName(), otherwise it will fail with a "Not logged" 
+        In your zombieTurn function, you must _never_ use getCurrentPlayerId()
+        or getCurrentPlayerName(), otherwise it will fail with a "Not logged"
         error message.
     */
 
@@ -548,18 +554,18 @@ class euchrenisterius extends Table {
     /*
         upgradeTableDb:
 
-        You don't have to care about this until your game has been published on 
-        BGA. Once your game is on BGA, this method is called everytime the 
+        You don't have to care about this until your game has been published on
+        BGA. Once your game is on BGA, this method is called everytime the
         system detects a game running with your old Database scheme.
         In this case, if you change your Database scheme, you just have to apply
-        the needed changes in order to update the game database and allow the 
+        the needed changes in order to update the game database and allow the
         game to continue to run with your new version.
     */
 
     function upgradeTableDb($from_version) {
-        // $from_version is the current version of this game database, in 
-        // numerical form. For example, if the game was running with a release 
-        // of your game named "140430-1345", $from_version is equal to 
+        // $from_version is the current version of this game database, in
+        // numerical form. For example, if the game was running with a release
+        // of your game named "140430-1345", $from_version is equal to
         // 1404301345
 
         // Example:

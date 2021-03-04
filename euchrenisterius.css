@@ -1,17 +1,17 @@
 /**
  *------
- * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & 
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> &
  * Emmanuel Colin <ecolin@boardgamearena.com>
  * Euchre implementation : © W Michael Shirk <wmichaelshirk@gmail.com> &
                              George Witty <jimblefredberry@gmail.com>
  *
- * This code has been produced on the BGA studio platform for use on 
+ * This code has been produced on the BGA studio platform for use on
  * http://boardgamearena.com. See http://en.boardgamearena.com/#!doc/Studio for
  * more information.
  * -----
  */
 
- 
+
  #mainview {
      margin-top: 10px;
      position: relative;
@@ -25,12 +25,48 @@
 /*
  * INFO CARDS
  */
-.special_cards{
+.special_cards {
     float: right;
     width: 150px;
-    height: 500px;
+    margin-right: 1em;
     position: relative;
 }
+
+.visibleCard {
+    text-align: center;
+    height: 130px;
+}
+
+.trumpCard{
+    display: inline-block;
+    position: relative;
+    margin-top: 5px;
+    width: 72px;
+    height: 96px;
+}
+
+.trumpBlock{
+    text-align: center;
+    height: 130px;
+}
+
+.gameProgression {
+    text-align: center;
+    height: 50px;
+}
+
+
+.trumpSuit {
+    font-size: 8em;
+    line-height: .6;
+    text-shadow: 1px 0 0 white, 0 1px 0 white, -1px 0 0 white, 0 -1px 0 white;
+}
+
+.symbolontable_2,
+.symbolontable_4 {
+    color: red;
+}
+
 
 /*
  * CARD TABLE
@@ -122,17 +158,17 @@
 .playertable_S {
     left: 50%;
     bottom: 0;
-    transform: translateX(-50%);    
+    transform: translateX(-50%);
 }
 .playertable_W {
     left: 0;
     top: 50%;
-    transform: translateY(-50%);    
+    transform: translateY(-50%);
 }
 .playertable_E {
     right: 0;
     top: 50%;
-    transform: translateY(-50%);    
+    transform: translateY(-50%);
 }
 
 .playertablecard {
@@ -171,7 +207,7 @@
     z-index: 2;
     width: 72px;
     height: 96px;
-    background-image: url('img/cardsnew.png'); 
+    background-image: url('img/cardsnew.png');
 }
 
 

@@ -1,12 +1,12 @@
 /**
  *------
- * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel 
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel
  * Colin <ecolin@boardgamearena.com>
  * euchrenisterius implementation: © W Michael Shirk <wmichaelshirk@gmail.com> &
  *                                   George Witty <jimblefredberry@gmail.com>
  *
- * This code has been produced on the BGA studio platform for use on 
- * http://boardgamearena.com. See http://en.boardgamearena.com/#!doc/Studio for 
+ * This code has been produced on the BGA studio platform for use on
+ * http://boardgamearena.com. See http://en.boardgamearena.com/#!doc/Studio for
  * more information.
  * -----
  */
@@ -19,50 +19,50 @@ define([
 ],
 function (dojo, declare) {
     return declare("bgagame.euchrenisterius", ebg.core.gamegui, {
-        
+
         constructor: function() {
             this.cardwidth = 72;
             this.cardheight = 96;
         },
-        
+
         /*
             setup:
-            
+
             This method must set up the game user interface according to current
             game situation specified in parameters.
-            
-            The method is called each time the game interface is displayed to a 
+
+            The method is called each time the game interface is displayed to a
             player, ie:
             _ when the game starts
             _ when a player refreshes the game page (F5)
-            
-            "gamedatas" argument contains all datas retrieved by your 
+
+            "gamedatas" argument contains all datas retrieved by your
             "getAllDatas" PHP method.
         */
-        
+
         setup: function (gamedatas) {
             console.log( "Starting game setup", gamedatas );
-            
+
             // Setting up player boards
             for (let player_id in gamedatas.players) {
                 var player = gamedatas.players[player_id];
-                         
+
                 // TODO: Setting up players boards if needed
             }
-            
+
             this.ranks = gamedatas.ranks
             this.suits = gamedatas.suits
 
             // Player hand
             this.playerHand = new ebg.stock();
-            this.playerHand.create(this, $('myhand'), 
+            this.playerHand.create(this, $('myhand'),
                 this.cardwidth, this.cardheight);
             this.playerHand.centerItems = true;
             this.playerHand.setSelectionAppearance('class');
             this.playerHand.setSelectionMode(1);
             this.playerHand.image_items_per_row = 13;
             dojo.connect(
-                this.playerHand, 
+                this.playerHand,
                 'onChangeSelection', this, 'onPlayerHandSelectionChanged');
 
             // Create cards types:
@@ -74,7 +74,7 @@ function (dojo, declare) {
                     this.playerHand.addItemType(
                         cardTypeId, // item Id
                         cardTypeId, // sorting "weight"
-                        `${g_gamethemeurl}img/cardsnew.png`, 
+                        `${g_gamethemeurl}img/cardsnew.png`,
                         cardTypeId  // position in sprite
                     )
                 }
@@ -91,23 +91,22 @@ function (dojo, declare) {
             }
 
             // Cards played on table
-            for (i in this.gamedatas.cardsontable) {
-                var card = this.gamedatas.cardsontable[i];
-                var suit = card.type;
-                var rank = card.type_arg;
-                var player_id = card.location_arg;
+            for (let i in this.gamedatas.cardsontable) {
+                let card = this.gamedatas.cardsontable[i];
+                let suit = card.type;
+                let rank = card.type_arg;
+                let player_id = card.location_arg;
                 this.playCardOnTable(player_id, suit, rank, card.id);
             }
 
             // Get contract
-            console.log(gamedatas)
-            
-            // Show the trump card (or suit) if it has been chosen 
-            var trumpSuit = this.gamedatas.trumpSuit;
-            var trumpValue = this.gamedatas.trumpValue;
+
+            // Show the trump card (or suit) if it has been chosen
+            const trumpSuit = gamedatas.trumpSuit;
+            const trumpValue = gamedatas.trumpTurnup;
             this.showTrumpSymbol(trumpSuit);
-            this.showTrumpCard(trumpSuit, trumpValue);     
- 
+            this.showTrumpCard(trumpSuit, trumpValue);
+
 
             // Create bids TODO: Probably there is a better way to do this...
             // this.bids = gamedatas.bids;
@@ -116,7 +115,7 @@ function (dojo, declare) {
             // this.colors = gamedatas.colors;
 
             // Display contract if it's an actual contract
-            
+
 
             // Show icons if necessary
             // this.dealer_id = gamedatas.dealer_id;
@@ -141,24 +140,24 @@ function (dojo, declare) {
             // // Update hand counter
             // this.updateHandCounter(gamedatas.handNumber, gamedatas.handsToPlay);
 
- 
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
 
             console.log( "Ending game setup" );
         },
-       
+
 
         ///////////////////////////////////////////////////
         //// Game & client states
-        
+
         // onEnteringState: this method is called each time we are entering into
-        //      a new game state. You can use this method to perform some user 
+        //      a new game state. You can use this method to perform some user
         //      interface changes at this moment.
         onEnteringState: function ( stateName, args ) {
             console.log( 'Entering state: '+stateName );
-            
-            
+
+
             if (stateName == 'playerTurn') {
                 if (this.isCurrentPlayerActive()) {
                     this.canPlayCard = true;
@@ -170,62 +169,62 @@ function (dojo, declare) {
         },
 
         // onLeavingState: this method is called each time we are leaving a game
-        //          state. You can use this method to perform some user 
+        //          state. You can use this method to perform some user
         //          interface changes at this moment.
         //
         onLeavingState: function ( stateName ) {
             console.log( 'Leaving state: '+stateName );
-            
+
             switch ( stateName ) {
-            
+
             /* Example:
-            
+
             case 'myGameState':
-            
+
                 // Hide the HTML block we are displaying only during this game state
                 dojo.style( 'my_html_block_id', 'display', 'none' );
-                
+
                 break;
            */
-           
-           
+
+
             case 'dummmy':
                 break;
-            }               
-        }, 
+            }
+        },
 
         // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
         //                        action status bar (ie: the HTML links in the status bar).
-        //        
+        //
         onUpdateActionButtons: function (stateName, args) {
             console.log(`onUpdateActionButtons: ${stateName}`);
-                      
-            if ( this.isCurrentPlayerActive() ) {            
+
+            if ( this.isCurrentPlayerActive() ) {
                 switch ( stateName ) {
-/*               
+/*
                  Example:
- 
+
                  case 'myGameState':
-                    
+
                     // Add 3 action buttons in the action status bar:
-                    
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' ); 
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
+
+                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' );
+                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
+                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
                     break;
 */
                 }
             }
-        },        
+        },
 
         ///////////////////////////////////////////////////
         //// Utility methods
-        
+
         /*
-        
+
             Here, you can defines some utility methods that you can use everywhere in your javascript
             script.
-        
+
         */
 
         // Get card unique identifier based on its suit and rank
@@ -275,7 +274,7 @@ function (dojo, declare) {
                     `cardontable_${player_id}`, `playertable_avatar_${player_id}`
                 )
             } else {
-                // You played a card. If it exists in your hand, move card from 
+                // You played a card. If it exists in your hand, move card from
                 // there and remove corresponding item
                 if ($(`myhand_item_${card_id}`)) {
                     this.placeOnObject(
@@ -292,6 +291,7 @@ function (dojo, declare) {
 
 
         showTrumpCard : function(suit, rank) {
+
             if (dojo.byId('trumpcardontable') != null) {
                 // If trump card already there, remove it to stop cluttering
                 dojo.destroy('trumpcardontable');
@@ -307,11 +307,11 @@ function (dojo, declare) {
             }
             dojo.place(this.format_block('jstpl_trumpcardontable', {
                 x: this.cardwidth * (rank - 2),
-                y: this.cardheight * (suit -1),
+                y: this.cardheight * (suit - 1),
             }), 'trumpCard');
             // If trump card is not the placeholder for no trumps, also update the trump symbol
             if (suit > 0 && rank != 15) {
-                this.showTrumpSymbol(color);
+                this.showTrumpSymbol(suit);
             }
         },
 
@@ -319,8 +319,10 @@ function (dojo, declare) {
             if (dojo.byId('trumpsymbolontable') != null) {
                 dojo.destroy('trumpsymbolontable');
             }
-            dojo.place(this.format_block('jstpl_trumpsymbolontable', { suit }),
-                'trumpSuit')
+            dojo.place(this.format_block('jstpl_trumpsymbolontable', {
+                suit,
+                symbol: this.suits[suit].symbol
+            }), 'trumpSuit')
         },
 
 
@@ -342,7 +344,7 @@ function (dojo, declare) {
                     if (args.card !== undefined) {
                         let name, colour, symbol
                         const { type: suit, type_arg: rank } = args.card
-                       
+
                         name = this.ranks?.[rank] + this.suits[suit].symbol
                         colour = (suit == 1 || suit == 3) ? 'black' : 'red'
 
@@ -368,21 +370,21 @@ function (dojo, declare) {
                 console.error('Exception while formatting "%o" with "%o":\n%o', log, args, e);
             }
             return this.inherited(arguments);
-        }, 
- 
+        },
+
         ///////////////////////////////////////////////////
         //// Player's action
-        
+
         onPlayerHandSelectionChanged: function () {
             this.checkIfPlay(false)
         },
-        
+
         /* Example:
-        
+
         onMyMethodToCall1: function( evt )
         {
             console.log( 'onMyMethodToCall1' );
-            
+
             // Preventing default browser reaction
             dojo.stopEvent( evt );
 
@@ -390,65 +392,56 @@ function (dojo, declare) {
             if( ! this.checkAction( 'myAction' ) )
             {   return; }
 
-            this.ajaxcall( "/euchrenisterius/euchrenisterius/myAction.html", { 
-                                                                    lock: true, 
-                                                                    myArgument1: arg1, 
+            this.ajaxcall( "/euchrenisterius/euchrenisterius/myAction.html", {
+                                                                    lock: true,
+                                                                    myArgument1: arg1,
                                                                     myArgument2: arg2,
                                                                     ...
-                                                                 }, 
+                                                                 },
                          this, function( result ) {
-                            
+
                             // What to do after the server call if it succeeded
                             // (most of the time: nothing)
-                            
+
                          }, function( is_error) {
 
                             // What to do after the server call in anyway (success or failure)
                             // (most of the time: nothing)
 
-                         } );        
-        },        
-        
+                         } );
+        },
+
         */
 
-        
+
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
 
         /*
             setupNotifications:
-            
+
             In this method, you associate each of your game notifications with your local method to handle it.
-            
+
             Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
                   your euchrenisterius.game.php file.
-        
+
         */
         setupNotifications: function() {
-            console.log( 'notifications subscriptions setup' );
-            
-            dojo.subscribe('newDeal', this, 'notifyNewDeal');
-            dojo.subscribe('newHand', this, 'notifyNewHand');
-            dojo.subscribe('playCard', this, 'notifyPlayCard');
-            dojo.subscribe('trickWin', this, 'notifyTrickWin');
-            this.notifqueue.setSynchronous('trickWin', 1000);
+            console.log( 'notifications subscriptions setup' )
+
+            dojo.subscribe('newDeal', this, 'notifyNewDeal')
+            dojo.subscribe('newHand', this, 'notifyNewHand')
+            dojo.subscribe('playCard', this, 'notifyPlayCard')
+            dojo.subscribe('trickWin', this, 'notifyTrickWin')
+            this.notifqueue.setSynchronous('trickWin', 1000)
             dojo.subscribe('giveAllCardsToPlayer', this, "notifyGiveAllCardsToPlayer");
 
-            // TODO: here, associate your game notifications with local methods
-            
-            // Example 1: standard notification handling
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            
-            // Example 2: standard notification handling + tell the user interface to wait
-            //            during 3 seconds after calling the method in order to let the players
-            //            see what is happening in the game.
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-            // 
-        },  
-        
-        // TODO: from this point and below, you can write your game notifications handling methods
-        
+
+        },
+
+        // TODO: from this point and below, you can write your game
+        // notifications handling methods
+
         notifyNewDeal: function (notif) {
             console.log(notif)
             // this.updateHandCounter(notif.args.current_hand,
@@ -502,13 +495,11 @@ function (dojo, declare) {
         notifyGiveAllCardsToPlayer: function (notif) {
             // Move all cards on table to given table, then destroy them
             const winnerId = notif.args.player_id;
-            self = this;
-            for ( var player_id in this.gamedatas.players) {
-                var anim = this.slideToObject('cardontable_' + player_id, 'playertable_avatar_' + winnerId);
-                dojo.connect(anim, 'onEnd', function(node) {
-                    // dojo.destroy(node);
-                    self.fadeOutAndDestroy(node, 500);
-                });
+            for (let player_id in this.gamedatas.players) {
+                const anim = this.slideToObject(
+                    `cardontable_${player_id}`, `playertable_avatar_${winnerId}`)
+                dojo.connect(anim, 'onEnd',
+                    node => this.fadeOutAndDestroy(node, 500))
                 anim.play();
             }
         },

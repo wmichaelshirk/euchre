@@ -427,11 +427,11 @@ function (dojo, declare) {
         setupNotifications: function() {
             console.log( 'notifications subscriptions setup' );
             
-            dojo.subscribe('newDeal', this, 'notifyNewDeal')
-            dojo.subscribe('newHand', this, 'notifyNewHand')
-            dojo.subscribe('playCard', this, 'notifyPlayCard')
-            dojo.subscribe('trickWin', this, 'notifyTrickWin')
-            this.notifqueue.setSynchronous('trickWin', 1000)
+            dojo.subscribe('newDeal', this, 'notifyNewDeal');
+            dojo.subscribe('newHand', this, 'notifyNewHand');
+            dojo.subscribe('playCard', this, 'notifyPlayCard');
+            dojo.subscribe('trickWin', this, 'notifyTrickWin');
+            this.notifqueue.setSynchronous('trickWin', 1000);
             dojo.subscribe('giveAllCardsToPlayer', this, "notifyGiveAllCardsToPlayer");
 
             // TODO: here, associate your game notifications with local methods
@@ -502,15 +502,15 @@ function (dojo, declare) {
         notifyGiveAllCardsToPlayer: function (notif) {
             // Move all cards on table to given table, then destroy them
             const winnerId = notif.args.player_id;
-            this.gamedatas.players.forEach(playerId => {
-                const anim = this.slideToObject(
-                    `cardontable_${playerId}`, 
-                    `playertable_avatar_${winnerId}`
-                )
-                dojo.connect(anim, 'onEnd', 
-                    node => this.fadeOutAndDestroy(node, 500))
-                anim.play()
-            })
+            self = this;
+            for ( var player_id in this.gamedatas.players) {
+                var anim = this.slideToObject('cardontable_' + player_id, 'playertable_avatar_' + winnerId);
+                dojo.connect(anim, 'onEnd', function(node) {
+                    // dojo.destroy(node);
+                    self.fadeOutAndDestroy(node, 500);
+                });
+                anim.play();
+            }
         },
 
    })

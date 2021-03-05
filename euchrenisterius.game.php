@@ -270,6 +270,33 @@ class euchrenisterius extends Table {
         euchrenisterius.action.php)
     */
 
+    function acceptOrPass($acceptOrPass) {
+        // Check makeBid action is available
+        self::checkAction("acceptOrPass");
+
+        // Get active player id
+        $active_player_id = self::getActivePlayerId();
+
+        // Change the game bid level if necessary
+        if ($acceptOrPass == 'passTurnUp') {
+            // If this player passed, set the relevant field in the database
+            self::DbQuery( 'UPDATE player SET has_passed = 1 WHERE player_id = ' . $active_player_id );
+
+            // And notify 
+            self::notifyAllPlayers('message', clienttranslate('${player_name} passes'), [
+                'player_name' => self::getActivePlayerName()
+            ]);
+
+        } else {
+            // TODO: Set trump suit and notify
+            self::notifyAllPlayers('message', clienttranslate('${player_name} accepts'), [
+                'player_name' => self::getActivePlayerName(),
+            ]);
+        }
+
+        // Finish makeBid and change state
+        $this->gamestate->nextState('acceptOrPass');
+    }
 
     function playCard($card_id) {
         self::checkAction("playCard");
@@ -310,6 +337,11 @@ class euchrenisterius extends Table {
         These methods function is to return some additional information that is
         specific to the current game state.
     */
+
+    function giveExtraTimeToActivePlayer()
+    {
+        self::giveExtraTime( self::getActivePlayerId() );
+    }
 
     function argPlayerTurn() {
 		// On player's turn, list possible cards
@@ -384,6 +416,28 @@ class euchrenisterius extends Table {
         $this->gamestate->nextState();
     }
 
+    function stNextPlayerToAccept() {
+        $standing = self::getCollectionFromDb( 'SELECT player_id FROM player WHERE has_passed = 0' );
+        $count = count( $standing );
+        // $bid_level = self::getGameStateValue('bid_level');
+        // $forehand_id = self::getGameStateValue('forehand_id');
+        // $declarer_id = self::getGameStateValue('declarer_id');
+
+        if ( $count == 0 ) {
+            // Everyone passed, so turn over turn up and move to new state
+
+            // Need to notify
+
+            self::activeNextPlayer();
+            $this->gamestate->nextState( 'allRefusedTurnUp' );
+            return;
+        } else {
+            // Otherwise just move on to the next player to bid
+            self::activeNextPlayer();
+            $this->gamestate->nextState('nextToAccept');
+            return;
+        }
+    }
 
 
     /*

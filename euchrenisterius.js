@@ -212,7 +212,12 @@ function (dojo, declare) {
                     this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
                     break;
+                    
 */
+                case 'playerAcceptTurnUp':
+                    this.addActionButton("btn_acceptTurnUp", _("Accept"), 'onButtonTurnUp', null, false, 'red')
+                    this.addActionButton("btn_passTurnUp", _("Pass"), 'onButtonTurnUp', null, false, 'blue')
+                    break
                 }
             }
         },
@@ -377,6 +382,19 @@ function (dojo, declare) {
 
         onPlayerHandSelectionChanged: function () {
             this.checkIfPlay(false)
+        },
+
+        onButtonTurnUp : function (event) {
+            if (this.checkAction('acceptOrPass')) {
+                const button_id = dojo.getAttr(event.currentTarget, 'id')
+                const acceptOrPass = button_id.split('_')[1]
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'acceptOrPass' + ".html", {
+                    bid: acceptOrPass,
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
         },
 
         /* Example:

@@ -33,6 +33,13 @@ class action_euchrenisterius extends APP_GameAction {
         $this->game->playCard($card_id);
         self::ajaxResponse();
     }
+
+    public function acceptOrPass() {
+        self::setAjaxMode();
+        $acceptOrPass = self::getArg("bid", AT_alphanum, true);
+        $this->game->acceptOrPass($acceptOrPass);
+        self::ajaxResponse();
+    }
   
 
 }

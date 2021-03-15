@@ -23,29 +23,30 @@ function (dojo, declare) {
         constructor: function() {
             this.cardwidth = 72;
             this.cardheight = 96;
+            this.trumpSuit = 0;
         },
 
         /*
-            setup:
+        setup:
 
-            This method must set up the game user interface according to current
-            game situation specified in parameters.
+        This method must set up the game user interface according to current
+        game situation specified in parameters.
 
-            The method is called each time the game interface is displayed to a
-            player, ie:
-            _ when the game starts
-            _ when a player refreshes the game page (F5)
+        The method is called each time the game interface is displayed to a
+        player, ie:
+        _ when the game starts
+        _ when a player refreshes the game page (F5)
 
-            "gamedatas" argument contains all datas retrieved by your
-            "getAllDatas" PHP method.
+        "gamedatas" argument contains all datas retrieved by your
+        "getAllDatas" PHP method.
         */
 
         setup: function (gamedatas) {
-            console.log( "Starting game setup", gamedatas );
+            console.log( "Starting game setup", gamedatas )
 
             // Setting up player boards
             for (let player_id in gamedatas.players) {
-                var player = gamedatas.players[player_id];
+                var player = gamedatas.players[player_id]
 
                 // TODO: Setting up players boards if needed
             }
@@ -54,16 +55,17 @@ function (dojo, declare) {
             this.suits = gamedatas.suits
 
             // Player hand
-            this.playerHand = new ebg.stock();
+            this.playerHand = new ebg.stock()
             this.playerHand.create(this, $('myhand'),
-                this.cardwidth, this.cardheight);
-            this.playerHand.centerItems = true;
-            this.playerHand.setSelectionAppearance('class');
-            this.playerHand.setSelectionMode(1);
-            this.playerHand.image_items_per_row = 13;
+                this.cardwidth, this.cardheight)
+            this.playerHand.centerItems = true
+            this.playerHand.setSelectionAppearance('class')
+            this.playerHand.setSelectionMode(1)
+            this.playerHand.image_items_per_row = 13
             dojo.connect(
                 this.playerHand,
-                'onChangeSelection', this, 'onPlayerHandSelectionChanged');
+                'onChangeSelection', this, 'onPlayerHandSelectionChanged'
+            )
 
             // Create cards types:
             // include the whole deck, even though only some are used.
@@ -79,7 +81,7 @@ function (dojo, declare) {
                     )
                 }
             }
-            // Add Joker and card backs here.
+            // TODO Add Joker and card backs here.
 
             // Cards in player's hand
             for (let i in this.gamedatas.hand) {
@@ -92,20 +94,22 @@ function (dojo, declare) {
 
             // Cards played on table
             for (let i in this.gamedatas.cardsontable) {
-                let card = this.gamedatas.cardsontable[i];
-                let suit = card.type;
-                let rank = card.type_arg;
-                let player_id = card.location_arg;
-                this.playCardOnTable(player_id, suit, rank, card.id);
+                let card = this.gamedatas.cardsontable[i]
+                let suit = card.type
+                let rank = card.type_arg
+                let player_id = card.location_arg
+                this.playCardOnTable(player_id, suit, rank, card.id)
             }
 
             // Get contract
 
             // Show the trump card (or suit) if it has been chosen
-            const trumpSuit = gamedatas.trumpSuit;
-            const trumpValue = gamedatas.trumpTurnup;
-            this.showTrumpSymbol(trumpSuit);
-            this.showTrumpCard(trumpSuit, trumpValue);
+            const trumpSuit = Number(gamedatas.trumpSuit)
+            const trumpValue = gamedatas.trumpTurnup
+            this.trumpSuit = trumpSuit
+            this.showTrumpSymbol(trumpSuit)
+            this.showTrumpCard(trumpSuit, trumpValue)
+            this.updateCardsWeights()
 
 
             // Create bids TODO: Probably there is a better way to do this...
@@ -162,8 +166,8 @@ function (dojo, declare) {
                 if (this.isCurrentPlayerActive()) {
                     this.canPlayCard = true;
                     // if (args.args._private.possibleCards) {
-					// 	this.updatePossibleCards(args.args._private.possibleCards)
-					// }
+                    // 	this.updatePossibleCards(args.args._private.possibleCards)
+                    // }
                 }
             }
         },
@@ -177,34 +181,35 @@ function (dojo, declare) {
 
             switch ( stateName ) {
 
-            /* Example:
+                /* Example:
 
-            case 'myGameState':
+                case 'myGameState':
 
-                // Hide the HTML block we are displaying only during this game state
+                // Hide the HTML block we are displaying only during this game 
+                // state
                 dojo.style( 'my_html_block_id', 'display', 'none' );
 
                 break;
-           */
+                */
 
 
-            case 'dummmy':
+                case 'dummmy':
                 break;
             }
         },
 
-        // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-        //                        action status bar (ie: the HTML links in the status bar).
-        //
+        // onUpdateActionButtons: in this method you can manage "action buttons" 
+        // that are displayed in the action status bar (ie: the HTML links in 
+        // the status bar).
         onUpdateActionButtons: function (stateName, args) {
             console.log(`onUpdateActionButtons: ${stateName}`);
 
             if ( this.isCurrentPlayerActive() ) {
                 switch ( stateName ) {
-/*
-                 Example:
+                    /*
+                    Example:
 
-                 case 'myGameState':
+                    case 'myGameState':
 
                     // Add 3 action buttons in the action status bar:
 
@@ -212,7 +217,7 @@ function (dojo, declare) {
                     this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
                     break;
-*/
+                    */
                 }
             }
         },
@@ -222,8 +227,8 @@ function (dojo, declare) {
 
         /*
 
-            Here, you can defines some utility methods that you can use everywhere in your javascript
-            script.
+        Here, you can defines some utility methods that you can use everywhere in your javascript
+        script.
 
         */
 
@@ -239,6 +244,49 @@ function (dojo, declare) {
                 args, this, result=>{}, onError)
         },
 
+        // Update cards weights based on current trumpColor
+        updateCardsWeights: function () {
+            // shift trump to right
+            let suitOrder = [1, 2, 3, 4]
+            let rest = suitOrder.splice(this.trumpSuit)
+            suitOrder = [...rest, ...suitOrder]
+
+            // get new ranks for the suit rearrangement
+            const weights = {}
+            suitOrder.forEach((suit, i) => {
+                for (let rank = 7; rank <= 14; rank++) {
+                    const weight = (i * 8 + rank)
+                    const cardValId = this.getCardUniqueId(suit, rank)
+                    weights[cardValId] = weight
+                }
+            })
+            // bowers to the front:
+            const jack = 11
+            const rightBowerId = this.getCardUniqueId(this.trumpSuit, jack)
+            weights[rightBowerId] = 56
+            const sameColor = ((this.trumpSuit + 2) % 4) || 4
+            const leftBowerId =  this.getCardUniqueId(sameColor, jack)
+            weights[leftBowerId] = 55
+            // // TODO best bower/joker
+
+            // add Trump Class
+            this.playerHand.changeItemsWeight(weights)
+            let ranks = [7, 8, 9, 10, 11, 12, 13, 14].map(rank =>
+                this.getCardUniqueId(this.trumpSuit, rank)
+            )
+            ;[...ranks, leftBowerId].forEach(cardValId => {
+                let cardItem = this.playerHand.getAllItems()
+                    .find(c => c.type == cardValId)
+                if (cardItem && cardItem.id) {
+                    let cardDivId = this.playerHand.getItemDivId(cardItem.id)
+                    let cardDiv = document.getElementById(cardDivId)
+                    if (cardDiv) {
+                        cardDiv.classList.add('stockitem--is-trump')
+                    }
+                }
+            })
+        },
+
 
         /* Card Management */
         // This function is called any time the selection changes, or if a
@@ -246,14 +294,14 @@ function (dojo, declare) {
         // If only one card is selected and it is time to play it, the move is
         // sent to the server, Otherwise, nothing happens
         checkIfPlay: function(noStateCheck) {
-            const items = this.playerHand.getSelectedItems();
+            const items = this.playerHand.getSelectedItems()
 
             if (!this.canPlayCard) return
 
             if (items.length === 1) {
                 const action='playCard'
                 if (noStateCheck || this.checkAction(action, true)) {
-                    const cardId = items[0].id;
+                    const cardId = items[0].id
                     this.makeAjaxCall(action, { id: cardId })
                 }
             }
@@ -285,39 +333,40 @@ function (dojo, declare) {
             }
             // In any case: move it to its final destination
             this.slideToObject(
-                `cardontable_${player_id}`, `playertablecard_${player_id}`
+                `cardontable_${player_id}`,
+                `playertablecard_${player_id}`
             ).play()
         },
 
 
         showTrumpCard : function(suit, rank) {
-
             if (dojo.byId('trumpcardontable') != null) {
                 // If trump card already there, remove it to stop cluttering
-                dojo.destroy('trumpcardontable');
+                dojo.destroy('trumpcardontable')
             }
             if (rank == 15) {
                 // If the trump rank is set to card back, make sure it is shown
-                suit = 3;
+                suit = 3
             }
             if (suit == 0) {
                 // If trump suit is no trumps, set to card back
-                suit = 3;
-                rank = 15;
+                suit = 3
+                rank = 15
             }
             dojo.place(this.format_block('jstpl_trumpcardontable', {
                 x: this.cardwidth * (rank - 2),
                 y: this.cardheight * (suit - 1),
-            }), 'trumpCard');
-            // If trump card is not the placeholder for no trumps, also update the trump symbol
+            }), 'trumpCard')
+            // If trump card is not the placeholder for no trumps, also update
+            // the trump symbol
             if (suit > 0 && rank != 15) {
-                this.showTrumpSymbol(suit);
+                this.showTrumpSymbol(suit)
             }
         },
 
         showTrumpSymbol: function(suit) {
             if (dojo.byId('trumpsymbolontable') != null) {
-                dojo.destroy('trumpsymbolontable');
+                dojo.destroy('trumpsymbolontable')
             }
             dojo.place(this.format_block('jstpl_trumpsymbolontable', {
                 suit,
@@ -332,12 +381,13 @@ function (dojo, declare) {
         format_string_recursive: function (log, args) {
             try {
                 if (log && args && !args.processed) {
-                    args.processed = true;
+                    args.processed = true
 
                     // for linking back to the results of the last game
                     if (args.seeResult !== undefined) {
-                        args.copyOfResult = args.seeResult; // HACK: Notification handler needs this
-                        args.seeResult = this.linkToResult(args.n, args.seeResult);
+                        // HACK: Notification handler needs this
+                        args.copyOfResult = args.seeResult
+                        args.seeResult = this.linkToResult(args.n, args.seeResult)
                     }
 
                     // Format cards
@@ -348,11 +398,10 @@ function (dojo, declare) {
                         name = this.ranks?.[rank] + this.suits[suit].symbol
                         colour = (suit == 1 || suit == 3) ? 'black' : 'red'
 
-                        args.card_name = dojo.string
-                            .substitute('<strong style="color:${colour};">${name}</strong>', {
-                                colour: colour,
-                                name: name
-                            })
+                        args.card_name = dojo.string.substitute(
+                            '<strong style="color:${colour};">${name}</strong>',
+                            { colour, name }
+                        )
                     }
 
                     // if (args.display_suit !== undefined) {
@@ -367,7 +416,10 @@ function (dojo, declare) {
 
                 }
             } catch (e) {
-                console.error('Exception while formatting "%o" with "%o":\n%o', log, args, e);
+                console.error(
+                    'Exception while formatting "%o" with "%o":\n%o',
+                    log, args, e
+                )
             }
             return this.inherited(arguments);
         },
@@ -393,22 +445,22 @@ function (dojo, declare) {
             {   return; }
 
             this.ajaxcall( "/euchrenisterius/euchrenisterius/myAction.html", {
-                                                                    lock: true,
-                                                                    myArgument1: arg1,
-                                                                    myArgument2: arg2,
-                                                                    ...
-                                                                 },
-                         this, function( result ) {
+                lock: true,
+                myArgument1: arg1,
+                myArgument2: arg2,
+                ...
+            },
+            this, function( result ) {
 
-                            // What to do after the server call if it succeeded
-                            // (most of the time: nothing)
+                // What to do after the server call if it succeeded
+                // (most of the time: nothing)
 
-                         }, function( is_error) {
+            }, function( is_error) {
 
-                            // What to do after the server call in anyway (success or failure)
-                            // (most of the time: nothing)
+                // What to do after the server call in anyway (success or failure)
+                // (most of the time: nothing)
 
-                         } );
+            } );
         },
 
         */
@@ -418,12 +470,12 @@ function (dojo, declare) {
         //// Reaction to cometD notifications
 
         /*
-            setupNotifications:
+        setupNotifications:
 
-            In this method, you associate each of your game notifications with your local method to handle it.
+        In this method, you associate each of your game notifications with your local method to handle it.
 
-            Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
-                  your euchrenisterius.game.php file.
+        Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
+        your euchrenisterius.game.php file.
 
         */
         setupNotifications: function() {
@@ -461,6 +513,7 @@ function (dojo, declare) {
                 let cardId = this.getCardUniqueId(suit, value)
                 this.playerHand.addToStockWithId(cardId, card.id)
             })
+            this.updateCardsWeights()
         },
 
         notifyPlayCard: function (notif) {
@@ -470,7 +523,7 @@ function (dojo, declare) {
                 type_arg: value,
                 id
             } = notif?.args?.card
-            this.playCardOnTable(notif.args.player_id, suit, value, id);
+            this.playCardOnTable(notif.args.player_id, suit, value, id)
         },
 
         notifyTrickWin: function (notif) {
@@ -484,12 +537,12 @@ function (dojo, declare) {
 
             // BELOTE COINCHE: clear the old tricks from logs.
             // var me = this
-			// setTimeout(function() {
-			// 	me.giveAllCardsToPlayer(notif.args.player_id).then(function() {
-			// 		me.clearOldTricksLogs(notif.args.trick_count_value - 1)
-			// 		me.updatePlayerTrickCount(notif.args.player_id, notif.args.trick_won)
-			// 	})
-			// }, 1500)
+            // setTimeout(function() {
+            // 	me.giveAllCardsToPlayer(notif.args.player_id).then(function() {
+            // 		me.clearOldTricksLogs(notif.args.trick_count_value - 1)
+            // 		me.updatePlayerTrickCount(notif.args.player_id, notif.args.trick_won)
+            // 	})
+            // }, 1500)
         },
 
         notifyGiveAllCardsToPlayer: function (notif) {
@@ -498,11 +551,12 @@ function (dojo, declare) {
             for (let player_id in this.gamedatas.players) {
                 const anim = this.slideToObject(
                     `cardontable_${player_id}`, `playertable_avatar_${winnerId}`)
-                dojo.connect(anim, 'onEnd',
-                    node => this.fadeOutAndDestroy(node, 500))
-                anim.play();
+                    dojo.connect(anim, 'onEnd',
+                    node => this.fadeOutAndDestroy(node, 500)
+                )
+                anim.play()
             }
         },
 
-   })
+    })
 })

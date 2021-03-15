@@ -263,11 +263,10 @@ function (dojo, declare) {
             // bowers to the front:
             const jack = 11
             const rightBowerId = this.getCardUniqueId(this.trumpSuit, jack)
-            weights[rightBowerId] = 55
-            const sameColor = ((this.trumpSuit + 2) % 4)
+            weights[rightBowerId] = 56
+            const sameColor = ((this.trumpSuit + 2) % 4) || 4
             const leftBowerId =  this.getCardUniqueId(sameColor, jack)
-            console.log(this.trumpSuit, this.trumpSuit + 2, sameColor)
-            weights[leftBowerId] = 56
+            weights[leftBowerId] = 55
             // // TODO best bower/joker
 
             // add Trump Class

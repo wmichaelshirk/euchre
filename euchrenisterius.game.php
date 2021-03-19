@@ -98,7 +98,7 @@ class euchrenisterius extends Table {
         ]];
         foreach ($this->suits as $suitId => $suit) {
 			// spade, heart, club, diamond
-			for ($value = 7; $value <= 14; $value++) {
+			for ($value = 9; $value <= 14; $value++) {
 				//  7, 8, 9, 10, J, Q, K, A
 				$cards[] = [
 					'type' => $suitId,
@@ -213,15 +213,17 @@ class euchrenisterius extends Table {
 
         $isInHand = false;
         $suitLed = self::getGameStateValue('suitLed');
+        $trumpSuit = self::getGameStateValue('trumpSuit');
         $atLeastOneOfSuitLed = false;
-        $card = null;
 
         foreach ($playerHand as $currentCard) {
+            $suit = self::getSuit($currentCard);
+
             if ($currentCard['id'] == $cardId) {
                 $isInHand = true;
                 $card = $currentCard;
             }
-            if ($currentCard['type'] == $suitLed) {
+            if ($suit == $suitLed) {
                 $atLeastOneOfSuitLed = true;
             }
         }
@@ -231,10 +233,14 @@ class euchrenisterius extends Table {
         }
 
         if ($suitLed != 0) {
-            if ($card['type'] != $suitLed) {
+            if (self::getSuit($card) != $suitLed) {
                 // The card does not match the suit led, and
                 // the player has at least one card of the needed suit
                 if ($atLeastOneOfSuitLed) {
+                    $suitName = $this->suits[$suitLed]['nametr'];
+                    if ($suitLed == $trumpSuit) {
+                        $suitName = _("Trump");
+                    }
                     throw new BgaUserException(sprintf(self::_("You must play a %s"),
                         $this->suits[$suitLed]['nametr']), true);
                 }
@@ -258,7 +264,30 @@ class euchrenisterius extends Table {
     }
 
 
-
+    private function getSuit($card) {
+        $trumpSuit = self::getGameStateValue('trumpSuit');
+        $sameColor = ($trumpSuit + 2) % 4;
+        if ($sameColor == 0) {
+            $sameColor = 4;
+        }
+        $jack = 11;
+        if ($card['type_arg'] == $jack &&
+                ($card['type'] == $trumpSuit || $card['type'] == $sameColor)) {
+            return $trumpSuit;
+        }
+        return $card['type'];
+    }
+    private function getRank($card) {
+        $jack = 11;
+        $trumpSuit = self::getGameStateValue('trumpSuit');
+        if ($card['type_arg'] == $jack && self::getSuit($card) == $trumpSuit) {
+            if ($card['type'] == $trumpSuit) {
+                return 16;
+            }
+            return 15;
+        }
+        return $card['type_arg'];
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
@@ -283,7 +312,7 @@ class euchrenisterius extends Table {
         $currentCard = $this->cards->getCard($card_id);
         $suitLed = self::getGameStateValue('suitLed') ;
         if ($suitLed == 0) {
-           self::setGameStateValue('suitLed', $currentCard['type']);
+           self::setGameStateValue('suitLed', self::getSuit($currentCard));
         }
 
         self::notifyAllPlayers('playCard',
@@ -425,24 +454,27 @@ class euchrenisterius extends Table {
         if ($this->cards->countCardInLocation('cardsontable') == 4) {
             // This is the end of the trick
             $cardsOnTable = $this->cards->getCardsInLocation('cardsontable');
-            $best_value = 0;
+            $bestValue = 0;
             $trickWinnerId = null;
             $suitLed = self::getGameStateValue('suitLed');
             $trumpSuit = self::getGameStateValue('trumpSuit');
+
             foreach ($cardsOnTable as $card) {
-                // If this is the first trump in the trick and trumps were not led
-                if ($card['type'] == $trumpSuit && $suitLed != $trumpSuit) {
+                $rank = self::getRank($card);
+                $suit = self::getSuit($card);
+                // If this is the first trump in the trick & trumps were not led
+                if ($suit == $trumpSuit && $suitLed != $trumpSuit) {
                     $suitLed = $trumpSuit;
                     $trickWinnerId = $card['location_arg'];
-                    $best_value = $card['type_arg'];
+                    $bestValue = $rank;
                 }
                 // Otherwise:
-                // Note: type = card color
-                if ($card['type'] == $suitLed) {
-                    if ($trickWinnerId === null || $card['type_arg'] > $best_value) {
+                // Note: type = card suit
+                if ($suit == $suitLed) {
+                    if ($trickWinnerId === null || $rank > $bestValue) {
                         $trickWinnerId = $card['location_arg'];
                         // Note: location_arg = player who played this card on table
-                        $best_value = $card['type_arg']; // Note: type_arg = value of the card
+                        $bestValue = $rank; // Note: type_arg = value of the card
                     }
                 }
             }

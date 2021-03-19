@@ -158,16 +158,16 @@ function (dojo, declare) {
         // onEnteringState: this method is called each time we are entering into
         //      a new game state. You can use this method to perform some user
         //      interface changes at this moment.
-        onEnteringState: function ( stateName, args ) {
+        onEnteringState: function (stateName, args) {
             console.log( 'Entering state: '+stateName );
 
 
             if (stateName == 'playerTurn') {
                 if (this.isCurrentPlayerActive()) {
                     this.canPlayCard = true;
-                    // if (args.args._private.possibleCards) {
-                    // 	this.updatePossibleCards(args.args._private.possibleCards)
-                    // }
+                    if (args.args._private.possibleCards) {
+                        this.updatePossibleCards(args.args._private.possibleCards)
+                    }
                 }
             }
         },
@@ -185,7 +185,7 @@ function (dojo, declare) {
 
                 case 'myGameState':
 
-                // Hide the HTML block we are displaying only during this game 
+                // Hide the HTML block we are displaying only during this game
                 // state
                 dojo.style( 'my_html_block_id', 'display', 'none' );
 
@@ -198,8 +198,8 @@ function (dojo, declare) {
             }
         },
 
-        // onUpdateActionButtons: in this method you can manage "action buttons" 
-        // that are displayed in the action status bar (ie: the HTML links in 
+        // onUpdateActionButtons: in this method you can manage "action buttons"
+        // that are displayed in the action status bar (ie: the HTML links in
         // the status bar).
         onUpdateActionButtons: function (stateName, args) {
             console.log(`onUpdateActionButtons: ${stateName}`);
@@ -338,6 +338,20 @@ function (dojo, declare) {
             ).play()
         },
 
+        updatePossibleCards: function (cards) {
+            dojo.query('.stockitem--not-possible')
+                .removeClass('stockitem--not-possible')
+            if (cards === null) {
+                return
+            }
+            dojo.query('.stockitem').forEach(el => {
+                const id = el.id.match(/^myhand_item_(\d+)$/)[1]
+                const possible = cards.find(card => card.id == id)
+                if (!possible) {
+                    el.classList.add('stockitem--not-possible')
+                }
+            })
+        },
 
         showTrumpCard : function(suit, rank) {
             if (dojo.byId('trumpcardontable') != null) {

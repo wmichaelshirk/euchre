@@ -70,8 +70,8 @@ $machinestates = [
 
     20 => [
         "name" => "playerAcceptTurnUp",
-        "description" => clienttranslate('${actplayer} must choose whether to accept the turn up suit as the trump suit'),
-        "descriptionmyturn" => clienttranslate('${you} must choose whether to accept the turn up suit as the trump suit'),
+        "description" => clienttranslate('${actplayer} must choose whether to order up the turn up'),
+        "descriptionmyturn" => clienttranslate('${you} must choose whether to order up the turn up'),
         "type" => "activeplayer",
         "possibleactions" => array( "acceptOrPass" ),
         "action" => "giveExtraTimeToActivePlayer",
@@ -122,7 +122,7 @@ $machinestates = [
         "descriptionmyturn" => clienttranslate('${you} must discard a card'),
         "type" => "activeplayer",
         "possibleactions" => array( "discard" ),
-        "action" => "stDiscarding",
+        "action" => "stDiscard",
         "updateGameProgression" => true, 
         "transitions" => array( "done" => 29 )   
     ],

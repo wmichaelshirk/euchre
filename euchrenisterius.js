@@ -215,7 +215,7 @@ function (dojo, declare) {
                     
 */
                 case 'playerAcceptTurnUp':
-                    this.addActionButton("btn_acceptTurnUp", _("Accept"), 'onButtonTurnUp', null, false, 'red')
+                    this.addActionButton("btn_acceptTurnUp", _("Order Up"), 'onButtonTurnUp', null, false, 'red')
                     this.addActionButton("btn_passTurnUp", _("Pass"), 'onButtonTurnUp', null, false, 'blue')
                     break
                 }

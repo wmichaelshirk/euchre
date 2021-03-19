@@ -24,12 +24,13 @@ class euchrenisterius extends Table {
         self::initGameStateLabels([
             'dealerId' => 10,
             'eldestId' => 11,
+            'declarerId' => 12,
 
-            'trumpSuit' => 12,
-            'trumpTurnup' => 13,
+            'trumpSuit' => 13,
+            'trumpTurnup' => 14,
 
-            'suitLed' => 14,
-            'trickCount' => 15
+            'suitLed' => 15,
+            'trickCount' => 16
 
 			// Options
             // 'gameLength'
@@ -84,6 +85,7 @@ class euchrenisterius extends Table {
         $firstDealerId = array_rand($players, 1);
 		self::setGameStateInitialValue('dealerId', $firstDealerId);
 		self::setGameStateInitialValue('eldestId', self::getPlayerAfter($firstDealerId));
+        self::setGameStateInitialValue('declarerId', 0);
 		self::setGameStateInitialValue('trumpSuit', 0);
         self::setGameStateInitialValue('trumpTurnup', 0);
         self::setGameStateInitialValue('suitLed', 0);
@@ -271,7 +273,7 @@ class euchrenisterius extends Table {
     */
 
     function acceptOrPass($acceptOrPass) {
-        // Check makeBid action is available
+        // Check acceptOrPass action is available
         self::checkAction("acceptOrPass");
 
         // Get active player id
@@ -289,12 +291,15 @@ class euchrenisterius extends Table {
 
         } else {
             // TODO: Set trump suit and notify
-            self::notifyAllPlayers('message', clienttranslate('${player_name} accepts'), [
+            self::notifyAllPlayers('message', clienttranslate('${player_name} orders up.'), [
                 'player_name' => self::getActivePlayerName(),
             ]);
+
+            // Set declarer ID
+            self::setGameStateValue('declarerId', $active_player_id);
         }
 
-        // Finish makeBid and change state
+        // Finish acceptOrPass and change state
         $this->gamestate->nextState('acceptOrPass');
     }
 
@@ -421,9 +426,17 @@ class euchrenisterius extends Table {
         $count = count( $standing );
         // $bid_level = self::getGameStateValue('bid_level');
         // $forehand_id = self::getGameStateValue('forehand_id');
-        // $declarer_id = self::getGameStateValue('declarer_id');
+        $dealerId = self::getGameStateValue('dealerId');
+        $declarerId = self::getGameStateValue('declarerId');
 
-        if ( $count == 0 ) {
+        if ($declarerId != 0) {
+            // If a declarer has been chosen then set the active player to the dealer who needs to discard
+            $this->gamestate->changeActivePlayer( $dealerId );
+
+            // Move to the state of discarding
+            $this->gamestate->nextState('done');
+            return;
+        } else if ( $count == 0 ) {
             // Everyone passed, so turn over turn up and move to new state
 
             // Need to notify
@@ -437,6 +450,20 @@ class euchrenisterius extends Table {
             $this->gamestate->nextState('nextToAccept');
             return;
         }
+    }
+
+    function stDiscard() {
+        // Give extra time to the active player
+        self::giveExtraTime( self::getActivePlayerId() );
+
+        $activePlayerId = self::getActivePlayerId();
+
+        $cards = $this->cards->pickCards(1, 'deck', $activePlayerId);
+        
+        // TODO: Set up the pickUpCard notification
+
+        // Notify player about his cards
+        self::notifyPlayer($activePlayerId, 'pickUpCard', '', array ('cards' => $cards ));
     }
 
 

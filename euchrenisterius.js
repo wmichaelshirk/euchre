@@ -46,9 +46,10 @@ function (dojo, declare) {
 
             // Setting up player boards
             for (let player_id in gamedatas.players) {
-                var player = gamedatas.players[player_id]
-
-                // TODO: Setting up players boards if needed
+                let player = gamedatas.players[player_id]
+                let playerBoardDiv = $(`player_board_${player_id}`)
+                dojo.place(this.format_block('jstpl_player_board', player), playerBoardDiv)
+                this.updatePlayerTrickCount(player.id, player.tricks)
             }
 
             this.ranks = gamedatas.ranks
@@ -388,6 +389,11 @@ function (dojo, declare) {
             }), 'trumpSuit')
         },
 
+        updatePlayerTrickCount: function (playerId, tricksWon) {
+            $(`trickcount_p${playerId}`).innerHTML = tricksWon
+            const visibility = Number(tricksWon) ? 'visible' : 'hidden'
+            dojo.style(`playertabletrickswonicon_${playerId}`, 'visibility', visibility)
+        },
 
 
         // @Override: client side magic to massage log arguments into
@@ -512,9 +518,9 @@ function (dojo, declare) {
             console.log(notif)
             // this.updateHandCounter(notif.args.current_hand,
             //     notif.args.hands_to_play);
-            // for ( let player_id in this.gamedatas.players) {
-            //     this.updatePlayerTrickCount(player_id, 0)
-            // }
+            for (let player_id in this.gamedatas.players) {
+                this.updatePlayerTrickCount(player_id, 0)
+            }
             // this.dealer = notif.args.dealer_id
 
             // activate all players, inactive inactive player
@@ -540,23 +546,16 @@ function (dojo, declare) {
             this.playCardOnTable(notif.args.player_id, suit, value, id)
         },
 
-        notifyTrickWin: function (notif) {
-            // this.updatePlayerTrickCount(notif.args.player_id,
-            //     notif.args.trick_won)
+        notifyTrickWin : function(notif) {
+            // this.hideAllBubbles()
+
+            this.updatePlayerTrickCount(notif.args.player_id,
+                notif.args.tricksWon)
 
             // $('trick_count_wrap').innerHTML =
             //     dojo.string.substitute( _('Trick ${n} of 25'), {
             //         n: Math.min(Number(notif.args.next) + 1, 25)
             //     })
-
-            // BELOTE COINCHE: clear the old tricks from logs.
-            // var me = this
-            // setTimeout(function() {
-            // 	me.giveAllCardsToPlayer(notif.args.player_id).then(function() {
-            // 		me.clearOldTricksLogs(notif.args.trick_count_value - 1)
-            // 		me.updatePlayerTrickCount(notif.args.player_id, notif.args.trick_won)
-            // 	})
-            // }, 1500)
         },
 
         notifyGiveAllCardsToPlayer: function (notif) {

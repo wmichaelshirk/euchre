@@ -210,6 +210,17 @@
     background-image: url('img/cardsnew.png');
 }
 
+.trickswonicon {
+    vertical-align: middle;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    background-image: url('img/tricks-icon.png');
+}
+
 
 
 /* state */

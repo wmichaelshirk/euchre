@@ -218,6 +218,10 @@ function (dojo, declare) {
                     this.addActionButton("btn_acceptTurnUp", _("Order Up"), 'onButtonTurnUp', null, false, 'red')
                     this.addActionButton("btn_passTurnUp", _("Pass"), 'onButtonTurnUp', null, false, 'blue')
                     break
+
+                case 'discardTurnUp':
+                    this.addActionButton("btn_discard", _("Discard"), 'onButtonDiscard', null, false, 'red')
+                    break
                 }
             }
         },
@@ -234,6 +238,11 @@ function (dojo, declare) {
 
         // Get card unique identifier based on its suit and rank
         getCardUniqueId: (suit, rank) => (suit - 1) * 13 + (rank - 2),
+
+        // Get cards selected in hand
+        getSelectedCards: function() {
+            return this.playerHand.getSelectedItems().map(item => item.id)
+        },
 
         makeAjaxCall: function(methodName, args, onError = error => {}) {
             $('pagemaintitletext').innerHTML = _('Sending move to server...')
@@ -397,6 +406,19 @@ function (dojo, declare) {
             }
         },
 
+        onButtonDiscard : function (event) {
+            if (this.checkAction('discard')) {
+                const selected = this.getSelectedCards()
+
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'discard' + ".html", {
+                    cards: selected.join(','),
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
         /* Example:
 
         onMyMethodToCall1: function( evt )
@@ -449,6 +471,8 @@ function (dojo, declare) {
 
             dojo.subscribe('newDeal', this, 'notifyNewDeal')
             dojo.subscribe('newHand', this, 'notifyNewHand')
+            dojo.subscribe('pickUpCard', this, 'notifyPickUpCard')
+            dojo.subscribe('discarded', this, 'notifyDiscarded')
             dojo.subscribe('playCard', this, 'notifyPlayCard')
             dojo.subscribe('trickWin', this, 'notifyTrickWin')
             this.notifqueue.setSynchronous('trickWin', 1000)
@@ -479,6 +503,26 @@ function (dojo, declare) {
                 let cardId = this.getCardUniqueId(suit, value)
                 this.playerHand.addToStockWithId(cardId, card.id)
             })
+        },
+
+        notifyPickUpCard : function(notif) {
+            // We received some new cards that we need to add to the hand.
+
+            for ( var i in notif.args.cards) {
+                let card = notif.args.cards[i]
+                let color = card.type
+                let value = card.type_arg
+                this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id)
+            }
+        },
+
+        notifyDiscarded : function(notif) {
+            // We discarded a card.
+
+            for ( var i in notif.args.cards) {
+                let card = notif.args.cards[i]
+                this.playerHand.removeFromStockById(card)
+            }
         },
 
         notifyPlayCard: function (notif) {

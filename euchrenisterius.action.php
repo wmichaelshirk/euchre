@@ -40,6 +40,14 @@ class action_euchrenisterius extends APP_GameAction {
         $this->game->acceptOrPass($acceptOrPass);
         self::ajaxResponse();
     }
+
+    public function discard() {
+        self::setAjaxMode();
+        $arg = self::getArg( 'cards', AT_numberlist, true );
+        $cards = $arg == '' ? array() : explode( ',', $arg );
+        $this->game->discard( $cards );
+        self::ajaxResponse();
+    }
   
 
 }

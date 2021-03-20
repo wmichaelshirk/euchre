@@ -331,6 +331,29 @@ class euchrenisterius extends Table {
         $this->gamestate->nextState();
     }
 
+    function discard($cards) {
+        // Check discard action is possible
+        self::checkAction('discard');
+
+        $playerId = self::getCurrentPlayerId();
+
+        $toDiscard = 1;
+
+        // Is the correct number of cards being discarded?
+        if( count( $cards ) != 1 ) {
+            throw new BgaUserException( self::_('You must discard exactly one card') ); // TODO: Make this dynamic
+        }
+
+        // Move cards to player's trick pile
+        $this->cards->moveCards( $cards, 'deck' );
+
+        // Notify player who discarded and remove discarded cards from hand.
+        $this->notifyPlayer( $playerId, 'discarded', '', [ 'cards' => $cards ] );
+
+        // Finish exchange and change state
+        $this->gamestate->nextState('done');
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments

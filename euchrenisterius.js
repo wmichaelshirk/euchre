@@ -171,6 +171,15 @@ function (dojo, declare) {
                     }
                 }
             }
+
+             // Highlight active player
+			dojo.query('.playertable')
+                .removeClass('playerTables__table--active')
+            if (args.active_player) {
+                this.getPlayerTableEl(args.active_player).classList
+                    .add('playerTables__table--active')
+            }
+
         },
 
         // onLeavingState: this method is called each time we are leaving a game
@@ -354,6 +363,19 @@ function (dojo, declare) {
             })
         },
 
+        /* Player Avatar Management */
+
+        // Return a player element (with class .playerTables__<suffix>)
+        // or the table wrapper if no suffix is given
+        getPlayerTableEl: function(playerId, suffix) {
+            let selector = `#playertable_${playerId}`
+            if (suffix) {
+                selector += ` .playerTables__${suffix}`
+            }
+            return dojo.query(selector)[0]
+        },
+
+
         showTrumpCard : function(suit, rank) {
             if (dojo.byId('trumpcardontable') != null) {
                 // If trump card already there, remove it to stop cluttering
@@ -391,6 +413,7 @@ function (dojo, declare) {
 
         updatePlayerTrickCount: function (playerId, tricksWon) {
             $(`trickcount_p${playerId}`).innerHTML = tricksWon
+            $(`trickswonvalue_${playerId}`).innerHTML = tricksWon
             const visibility = Number(tricksWon) ? 'visible' : 'hidden'
             dojo.style(`playertabletrickswonicon_${playerId}`, 'visibility', visibility)
         },

@@ -58,8 +58,10 @@
                     <span>{PLAYER_NAME}</span>
                 </div>
 			</div>
-            <div id="playertabletrickswonicon_{PLAYER_ID}" class="trickswonicon"></div>
-            <!--<div id="playertabletrickswonvalue_{PLAYER_ID}" class="playertabletrickswonvalue"></div>-->
+            <div id="playertabletrickswonicon_{PLAYER_ID}">
+                <span class="trickswonicon"></span><span> × </span>
+                <span id="trickswonvalue_{PLAYER_ID}" class="playertabletrickswonvalue"></span>
+            </div>
         </div>
 
         <div class="playertablecard playertablecard_{DIR}" id="playertablecard_{PLAYER_ID}"></div>

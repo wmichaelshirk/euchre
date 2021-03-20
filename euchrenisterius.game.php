@@ -139,6 +139,7 @@ class euchrenisterius extends Table {
         // in "dbmodel.sql" if you need it.
         $sql = "SELECT player_id id, player_score score, player_tricks tricks FROM player ";
         $result['players'] = self::getCollectionFromDb($sql);
+
         $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
         $result['cardsontable'] = $this->cards->getCardsInLocation('cardsontable');
         $result['trumpSuit'] = self::getGameStateValue('trumpSuit');

@@ -30,7 +30,7 @@ class euchrenisterius extends Table {
             'trumpTurnup' => 14,
 
             'suitLed' => 15,
-            'trickCount' => 16
+            'trickCount' => 16,
             'trickCount' => 17,
 
             // Options:
@@ -331,9 +331,13 @@ class euchrenisterius extends Table {
             ]);
 
         } else {
-            // TODO: Set trump suit and notify
-            self::notifyAllPlayers('message', clienttranslate('${player_name} orders up.'), [
+            // TODO: Set trump suit and notify about the card being picked up
+            $turnUp = $this->cards->getCardOnTop('deck');
+
+            self::notifyAllPlayers('message', clienttranslate('${player_name} orders up the ${card_name}.'), [
                 'player_name' => self::getActivePlayerName(),
+                'card' => $turnUp,
+                'card_name' => ''
             ]);
 
             // Set declarer ID
@@ -453,6 +457,17 @@ class euchrenisterius extends Table {
         $this->cards->moveAllCardsInLocation(null, 'deck');
         // Create deck, shuffle it and deal 5
         $this->cards->shuffle('deck');
+
+        // Work out the turn up before dealing in case it is the joker (the trump suit should be chosen without seeing hands)
+        // TODO: Change 21 & 20 to reflect the number of cards option
+        $top25cards = $this->cards->getCardsOnTop(21, 'deck');
+        $turnUp = $top25cards[20];
+
+        self::notifyAllPlayers('message', clienttranslate('The turn up will be ${card_name}'), [
+            'card' => $turnUp,
+            'card_name' => '',
+        ]);
+
         $players = self::loadPlayersBasicInfos();
         foreach ($players as $playerId => $player) {
             $cards = $this->cards->pickCards(5, 'deck', $playerId);
@@ -483,6 +498,10 @@ class euchrenisterius extends Table {
 
         $this->gamestate->changeActivePlayer($eldest);
         $this->gamestate->nextState();
+    }
+
+    function stJokerChooseSuit () {
+        // TODO: Write this function for the joker state
     }
 
     function stNextPlayerToAccept() {
@@ -524,8 +543,6 @@ class euchrenisterius extends Table {
 
         $cards = $this->cards->pickCards(1, 'deck', $activePlayerId);
         
-        // TODO: Set up the pickUpCard notification
-
         // Notify player about his cards
         self::notifyPlayer($activePlayerId, 'pickUpCard', '', array ('cards' => $cards ));
     }

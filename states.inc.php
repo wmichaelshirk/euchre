@@ -68,6 +68,17 @@ $machinestates = [
         "transitions" => ["" => 20]
     ],
 
+    19 => [
+        "name" => "jokerChooseSuit",
+        "description" => clienttranslate('${actplayer} must choose a trump suit'),
+        "descriptionmyturn" => clienttranslate('${you} must choose a trump suit'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "chooseTrumpSuit" ),
+        "action" => "stJokerChooseSuit",
+        "updateGameProgression" => true, 
+        "transitions" => array( "done" => 29 )
+    ],
+
     20 => [
         "name" => "playerAcceptTurnUp",
         "description" => clienttranslate('${actplayer} must choose whether to order up the turn up'),

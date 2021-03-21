@@ -58,7 +58,7 @@
                     <span>{PLAYER_NAME}</span>
                 </div>
 			</div>
-            <div id="playertabletrickswonicon_{PLAYER_ID}">
+            <div id="playertabletrickswonicon_{PLAYER_ID}" class="trickcount">
                 <span class="trickswonicon"></span><span> × </span>
                 <span id="trickswonvalue_{PLAYER_ID}" class="playertabletrickswonvalue"></span>
             </div>

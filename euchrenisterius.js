@@ -62,7 +62,7 @@ function (dojo, declare) {
             this.playerHand.centerItems = true
             this.playerHand.setSelectionAppearance('class')
             this.playerHand.setSelectionMode(1)
-            this.playerHand.image_items_per_row = 13
+            this.playerHand.image_items_per_row = 14
             dojo.connect(
                 this.playerHand,
                 'onChangeSelection', this, 'onPlayerHandSelectionChanged'
@@ -83,6 +83,13 @@ function (dojo, declare) {
                 }
             }
             // TODO Add Joker and card backs here.
+            let jokerId = this.getCardUniqueId(5, 1)
+            this.playerHand.addItemType(
+                jokerId, // item Id
+                53, // sorting "weight"
+                `${g_gamethemeurl}img/cardsnew.png`,
+                27  // position in sprite
+            )
 
             // Cards in player's hand
             for (let i in this.gamedatas.hand) {
@@ -108,7 +115,6 @@ function (dojo, declare) {
             const trumpSuit = Number(gamedatas.trumpSuit)
             const trumpValue = gamedatas.trumpTurnup
             this.trumpSuit = trumpSuit
-            this.showTrumpSymbol(trumpSuit)
             this.showTrumpCard(trumpSuit, trumpValue)
             this.updateCardsWeights()
 
@@ -243,7 +249,7 @@ function (dojo, declare) {
         */
 
         // Get card unique identifier based on its suit and rank
-        getCardUniqueId: (suit, rank) => (suit - 1) * 13 + (rank - 2),
+        getCardUniqueId: (suit, rank) => (suit - 1) * 14 + (rank - 2),
 
         makeAjaxCall: function(methodName, args, onError = error => {}) {
             $('pagemaintitletext').innerHTML = _('Sending move to server...')
@@ -277,14 +283,16 @@ function (dojo, declare) {
             const sameColor = ((this.trumpSuit + 2) % 4) || 4
             const leftBowerId =  this.getCardUniqueId(sameColor, jack)
             weights[leftBowerId] = 55
-            // // TODO best bower/joker
+            // best bower/joker
+            const bestBowerId = this.getCardUniqueId(5, 1)
+            weights[bestBowerId] = 57
 
             // add Trump Class
             this.playerHand.changeItemsWeight(weights)
             let ranks = [7, 8, 9, 10, 11, 12, 13, 14].map(rank =>
                 this.getCardUniqueId(this.trumpSuit, rank)
             )
-            ;[...ranks, leftBowerId].forEach(cardValId => {
+            ;[...ranks, leftBowerId, bestBowerId].forEach(cardValId => {
                 let cardItem = this.playerHand.getAllItems()
                     .find(c => c.type == cardValId)
                 if (cardItem && cardItem.id) {
@@ -318,7 +326,11 @@ function (dojo, declare) {
         },
 
         playCardOnTable: function(player_id, suit, value, card_id) {
-            // player_id => direction
+            // Joker
+            if (suit == 5) {
+                suit = 2
+                value = 15
+            }
             dojo.place(this.format_block('jstpl_cardontable', {
                 x: this.cardwidth * (value - 2),
                 y: this.cardheight * (suit - 1),
@@ -385,9 +397,9 @@ function (dojo, declare) {
                 // If the trump rank is set to card back, make sure it is shown
                 suit = 3
             }
-            if (suit == 0) {
-                // If trump suit is no trumps, set to card back
-                suit = 3
+            // Joker
+            if (suit == 5) {
+                suit = 2
                 rank = 15
             }
             dojo.place(this.format_block('jstpl_trumpcardontable', {
@@ -407,7 +419,7 @@ function (dojo, declare) {
             }
             dojo.place(this.format_block('jstpl_trumpsymbolontable', {
                 suit,
-                symbol: this.suits[suit].symbol
+                symbol: this.suits[suit]?.symbol
             }), 'trumpSuit')
         },
 
@@ -438,9 +450,14 @@ function (dojo, declare) {
                         let name, colour, symbol
                         const { type: suit, type_arg: rank } = args.card
 
-                        name = this.ranks?.[rank] + this.suits[suit].symbol
-                        colour = (suit == 1 || suit == 3) ? 'black' : 'red'
-
+                        // joker
+                        if (suit == 5) {
+                            name = this.ranks?.[15]
+                            colour = 'blue'
+                        } else {
+                            name = this.ranks?.[rank] + this.suits[suit]?.symbol
+                            colour = (suit == 1 || suit == 3) ? 'black' : 'red'
+                        }
                         args.card_name = dojo.string.substitute(
                             '<strong style="color:${colour};">${name}</strong>',
                             { colour, name }

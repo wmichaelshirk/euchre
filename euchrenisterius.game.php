@@ -29,11 +29,14 @@ class euchrenisterius extends Table {
             'trumpTurnup' => 13,
 
             'suitLed' => 14,
-            'trickCount' => 15
+            'trickCount' => 15,
+
+            // Options:
+            "targetScore" => 100,
+            "deckSize" => 101,
+            "useJoker" => 102,
 
 			// Options
-            // 'gameLength'
-            // 'deckSize'
             // 'stickTheDealer'
             // 'canadianLoner
             // 'callAce' ?
@@ -91,16 +94,21 @@ class euchrenisterius extends Table {
         self::setGameStateInitialValue('trickCount', 0);
 
         // build deck
+        $cards = [];
+
         // Joker
-        $cards = [[
-            'type' => 0,
-			'type_arg' => 0,
-			'nbr' => 0,
-        ]];
+        if (self::getGameStateValue('useJoker') == 1) {
+            $cards[] = [
+                'type' => 5,
+                'type_arg' => 1,
+                'nbr' => 1,
+            ];
+        }
+        // rest of deck.
+        $startingRank = self::getGameStateValue('deckSize');
         foreach ($this->suits as $suitId => $suit) {
 			// spade, heart, club, diamond
-			for ($value = 9; $value <= 14; $value++) {
-				//  7, 8, 9, 10, J, Q, K, A
+			for ($value = $startingRank; $value <= 14; $value++) {
 				$cards[] = [
 					'type' => $suitId,
 					'type_arg' => $value,
@@ -268,6 +276,8 @@ class euchrenisterius extends Table {
 
     private function getSuit($card) {
         $trumpSuit = self::getGameStateValue('trumpSuit');
+        if ($card['type'] == 5) return $trumpSuit;
+
         $sameColor = ($trumpSuit + 2) % 4;
         if ($sameColor == 0) {
             $sameColor = 4;
@@ -280,6 +290,7 @@ class euchrenisterius extends Table {
         return $card['type'];
     }
     private function getRank($card) {
+        if ($card['type'] == 5) return 17;
         $jack = 11;
         $trumpSuit = self::getGameStateValue('trumpSuit');
         if ($card['type_arg'] == $jack && self::getSuit($card) == $trumpSuit) {
@@ -414,7 +425,6 @@ class euchrenisterius extends Table {
         $this->gamestate->changeActivePlayer($eldest);
         $this->gamestate->nextState();
     }
-
 
 
     /*

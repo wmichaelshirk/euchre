@@ -150,27 +150,49 @@
     border-radius: 50%;
 }
 
+.trickcount {
+    position: absolute;
+}
 .playertable_N {
     left: 50%;
     top: 0;
     transform: translateX(-50%);
+}
+.playertable_N .trickcount {
+    left: 0;
+    top: 25%;
+    transform: translateX(-75%);
 }
 .playertable_S {
     left: 50%;
     bottom: 0;
     transform: translateX(-50%);
 }
+.playertable_S .trickcount {
+    bottom: 0;
+    right: -25%;
+    transform: translateY(-100%);
+}
 .playertable_W {
     left: 0;
     top: 50%;
     transform: translateY(-50%);
+}
+.playertable_W .trickcount {
+    left: 25%;
+    bottom: 0;
+    transform: translateY(25%);
 }
 .playertable_E {
     right: 0;
     top: 50%;
     transform: translateY(-50%);
 }
-
+.playertable_E .trickcount {
+    right: 25%;
+    top: 0;
+    transform: translateY(-25%);
+}
 .playertablecard {
     position: absolute;
     /* margin-top: 20px; */

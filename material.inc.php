@@ -52,4 +52,5 @@ $this->ranks = [
 	12 => clienttranslate('Q'),
 	13 => clienttranslate('K'),
 	14 => clienttranslate('A'),
+    15 => '&#9733;'
 ];

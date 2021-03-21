@@ -24,7 +24,32 @@
  *
  */
 
-$game_options = array(
+$game_options = [
+
+    100 => [
+        'name' => totranslate('Game length'),
+        'values' => [
+            5 => ['name' => totranslate('Short - 5 points')],
+            10 => ['name' => totranslate('American — 10 points')],
+            11 => ['name' => totranslate('British — 11 points')],
+        ],
+    ],
+
+
+    101 => [
+        'name' => totranslate('Deck'),
+        'values' => [
+            9 => ['name' => totranslate('24 cards — A-9')],
+            7 => ['name' => totranslate('32 cards — A-7')],
+        ]
+    ],
+    102 => [
+        'name' => totranslate('With Joker?'),
+        'values' => [
+            0 => ['name' => totranslate('No')],
+            1 => ['name' => totranslate('Yes')],
+        ]
+    ],
 
     /*
     
@@ -52,6 +77,4 @@ $game_options = array(
 
     */
 
-);
-
-
+];

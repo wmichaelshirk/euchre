@@ -54,14 +54,6 @@ $game_options = [
         ]
     ],
 
-    100 => [
-        'name' => totranslate('Game length'),
-        'values' => [
-            5 => ['name' => totranslate('Short - 5 points')],
-            10 => ['name' => totranslate('American - 10 points')],
-            11 => ['name' => totranslate('British - 11 points')],
-        ],
-    ],
     /*
     
     // note: game variant ID should start at 100 (ie: 100, 101, 102, ...). The maximum is 199.

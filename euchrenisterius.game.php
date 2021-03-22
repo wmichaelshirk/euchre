@@ -59,7 +59,8 @@ class euchrenisterius extends Table {
     protected function setupNewGame($players, $options = []) {
         // Set the colors of the players with HTML color code
         // The default below is red/green/blue/orange/brown
-        // The number of colors defined here must correspond to the maximum number of players allowed for the gams
+        // The number of colors defined here must correspond to the maximum
+        // number of players allowed for the gams
         $gameinfos = self::getGameinfos();
         $default_colors = $gameinfos['player_colors'];
 
@@ -144,8 +145,9 @@ class euchrenisterius extends Table {
         // Get information about players
         // Note: you can retrieve some extra field you added for "player" table
         // in "dbmodel.sql" if you need it.
-        $sql = "SELECT player_id id, player_score score FROM player ";
+        $sql = "SELECT player_id id, player_score score, player_tricks tricks FROM player ";
         $result['players'] = self::getCollectionFromDb($sql);
+
         $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
         $result['cardsontable'] = $this->cards->getCardsInLocation('cardsontable');
         $result['trumpSuit'] = self::getGameStateValue('trumpSuit');
@@ -506,8 +508,9 @@ class euchrenisterius extends Table {
             );
 
             // Notify
-            // Note: we use 2 notifications here in order we can pause the display during the first notification
-            //  before we move all cards to the winner (during the second)
+            // Note: we use 2 notifications here in order we can pause the
+            // display during the first notification before we move all cards
+            // to the winner (during the second)
             $players = self::loadPlayersBasicInfos();
             self::notifyAllPlayers('trickWin', clienttranslate('${player_name} wins the trick'), [
                 'player_id' => $trickWinnerId,

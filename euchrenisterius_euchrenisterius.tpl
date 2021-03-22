@@ -58,8 +58,10 @@
                     <span>{PLAYER_NAME}</span>
                 </div>
 			</div>
-            <div class="playertabletrickswonicon"></div>
-            <div id="playertabletrickswonvalue_{PLAYER_ID}" class="playertabletrickswonvalue"></div>
+            <div id="playertabletrickswonicon_{PLAYER_ID}" class="trickcount">
+                <span class="trickswonicon"></span><span> × </span>
+                <span id="trickswonvalue_{PLAYER_ID}" class="playertabletrickswonvalue"></span>
+            </div>
         </div>
 
         <div class="playertablecard playertablecard_{DIR}" id="playertablecard_{PLAYER_ID}"></div>
@@ -96,6 +98,9 @@ var jstpl_cardontable = '<div class="cardontable" id="cardontable_${player_id}" 
 var jstpl_trumpcardontable = '<div class = "cardontable" id="trumpcardontable" style="background-position:-${x}px -${y}px"></div>';
 var jstpl_trumpsymbolontable = '<div class ="symbolontable_${suit}" id="trumpsymbolontable">${symbol}</div>';
 var jstpl_contractontable = '<div id="contractontable" style="display: flex;justify-content: center;align-items: center;height: 40px;"><strong>${contract}</strong></div>';
+var jstpl_player_board = '\<div class="cp_board">\
+    <div id="trickicon_p${id}" class="trickswonicon"></div> × <span id="trickcount_p${id}">0</span>\
+</div>';
 
 </script>  
 {OVERALL_GAME_FOOTER}

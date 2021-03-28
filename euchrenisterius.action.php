@@ -48,6 +48,13 @@ class action_euchrenisterius extends APP_GameAction {
         $this->game->discard( $cards );
         self::ajaxResponse();
     }
+
+    public function chooseTrump() {
+        self::setAjaxMode();
+        $color = self::getArg("color", AT_posint, true);
+        $this->game->chooseTrump($color);
+        self::ajaxResponse();
+    }
   
 
 }

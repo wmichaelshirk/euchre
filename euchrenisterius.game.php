@@ -399,6 +399,29 @@ class euchrenisterius extends Table {
         $this->gamestate->nextState('done');
     }
 
+    function chooseTrump($trumpSuit) {
+        // Check chooseTrump action is possible
+        self::checkAction ( 'chooseTrump' );
+
+        // Set the trump suit to the declarer's choice
+        self::setGameStateValue('trumpSuit', $trumpSuit);
+
+        // TODO: Set trump suit on table to the correct trump suit
+        // TODO: Notify players of the trump suit being chosen
+
+        // Following code from Solo Whist:
+        //
+        // // Notify players
+        // self::notifyAllPlayers( 'chooseTrumpSymbol', clienttranslate('${player_name} chooses ${trumpCardSuitLabel} as the trump suit.') , array( 
+        //     'i18n' => array( 'trumpCardSuitLabel' ), 
+        //     'player_name' => self::getActivePlayerName(),
+        //     'trumpCardSuitLabel' => $this->colors [$trumpSuit] ['name']  , 
+        //     'color' => $trumpSuit
+        // ));
+
+        $this->gamestate->nextState('done');
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
@@ -459,14 +482,27 @@ class euchrenisterius extends Table {
         $this->cards->shuffle('deck');
 
         // Work out the turn up before dealing in case it is the joker (the trump suit should be chosen without seeing hands)
-        // TODO: Change 21 & 20 to reflect the number of cards option
-        $top25cards = $this->cards->getCardsOnTop(21, 'deck');
-        $turnUp = $top25cards[20];
+        // i.e., get the 21st card in the deck for 4 players
+        $top21cards = $this->cards->getCardsOnTop(21, 'deck');
+        $turnUp = $top21cards[20];
 
         self::notifyAllPlayers('message', clienttranslate('The turn up will be ${card_name}'), [
             'card' => $turnUp,
             'card_name' => '',
         ]);
+
+        // Get the dealer id
+        $dealer = self::getGameStateValue('dealerId');
+
+        if (self::getRank($turnUp) == 17) {
+        // if (1 == 1) { // For testing joker transitions
+            // If the turn up is a joker, need to move to the Joker state
+            $this->gamestate->changeActivePlayer($dealer);
+            $this->gamestate->nextState('joker');
+            return;
+        }
+
+        // Otherwise, we carry on and deal the cards
 
         $players = self::loadPlayersBasicInfos();
         foreach ($players as $playerId => $player) {
@@ -486,7 +522,6 @@ class euchrenisterius extends Table {
         self::setGameStateValue('trickCount', 0);
 
         // Announce start of hand.
-        $dealer = self::getGameStateValue('dealerId');
         $eldest = self::getGameStateValue('eldestId');
         self::notifyAllPlayers('newDeal', clienttranslate('<hr/>${player_name} deals a new hand and turns the ${card_name}.<hr/>'), [
             'dealer_id' => $dealer,
@@ -497,11 +532,20 @@ class euchrenisterius extends Table {
         ]);
 
         $this->gamestate->changeActivePlayer($eldest);
-        $this->gamestate->nextState();
+        $this->gamestate->nextState('noJoker');
     }
 
     function stJokerChooseSuit () {
-        // TODO: Write this function for the joker state
+        // Announce joker turned
+        $dealer = self::getGameStateValue('dealerId');
+        $eldest = self::getGameStateValue('eldestId');
+        // self::notifyAllPlayers('newDeal', clienttranslate('<hr/>${player_name} deals a new hand and turns the ${card_name}.<hr/>'), [
+        //     'dealer_id' => $dealer,
+        //     'player_name' => self::getPlayerName($dealer),
+        //     'eldest' => $eldest,
+        //     'card' => $turnUp,
+        //     'card_name' => '',
+        // ]);
     }
 
     function stNextPlayerToAccept() {

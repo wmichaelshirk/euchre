@@ -233,6 +233,12 @@ function (dojo, declare) {
                 case 'discardTurnUp':
                     this.addActionButton("btn_discard", _("Discard"), 'onButtonDiscard', null, false, 'red')
                     break
+                
+                case 'jokerChooseSuit':
+                    for (var i = 1; i <= 4; i++) {
+                        this.addSuitButton(i)
+                    }
+                    break
                 }
             }
         },
@@ -379,6 +385,15 @@ function (dojo, declare) {
             })
         },
 
+        addSuitButton : function(suit) {
+            var suitName = _(this.suits[suit]['name']);
+            this.addActionButton('buttonSuit_' + suit, suitName + ' ' + this.suits[suit]['symbol'], 'onSuitButtonClick', null, false, 'gray');
+            var toolTipText = dojo.string.substitute( _("Choose ${s} as the trump suit."), {
+                s: suitName
+            } );
+            this.addTooltipHtml('buttonSuit_' + suit, toolTipText);
+        },
+
         showTrumpCard : function(suit, rank) {
             if (dojo.byId('trumpcardontable') != null) {
                 // If trump card already there, remove it to stop cluttering
@@ -495,6 +510,19 @@ function (dojo, declare) {
 
                 this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'discard' + ".html", {
                     cards: selected.join(','),
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
+        onSuitButtonClick : function (event) {
+            if (this.checkAction('chooseTrump')) {
+                var button_id = dojo.getAttr(event.currentTarget, 'id');
+                var bid_id = button_id.split('_')[1];
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'chooseTrump' + ".html", {
+                    color: bid_id,
                     lock : true
                 }, this, function(result) {
                 }, function(is_error) {

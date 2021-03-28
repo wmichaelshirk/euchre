@@ -584,6 +584,7 @@ function (dojo, declare) {
             dojo.subscribe('newHand', this, 'notifyNewHand')
             dojo.subscribe('pickUpCard', this, 'notifyPickUpCard')
             dojo.subscribe('discarded', this, 'notifyDiscarded')
+            dojo.subscribe('chooseTrump', this, 'notifyChooseTrump')
             dojo.subscribe('playCard', this, 'notifyPlayCard')
             dojo.subscribe('trickWin', this, 'notifyTrickWin')
             this.notifqueue.setSynchronous('trickWin', 1000)
@@ -626,6 +627,8 @@ function (dojo, declare) {
                 let value = card.type_arg
                 this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id)
             }
+
+            this.updateCardsWeights()
         },
 
         notifyDiscarded : function(notif) {
@@ -635,6 +638,10 @@ function (dojo, declare) {
                 let card = notif.args.cards[i]
                 this.playerHand.removeFromStockById(card)
             }
+        },
+
+        notifyChooseTrump : function(notif) {
+            // TODO: Show the trump symbol on the table
         },
 
         notifyPlayCard: function (notif) {

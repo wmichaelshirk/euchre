@@ -52,7 +52,7 @@ class action_euchrenisterius extends APP_GameAction {
     public function chooseTrump() {
         self::setAjaxMode();
         $color = self::getArg("color", AT_posint, true);
-        $this->game->chooseTrump($color);
+        $this->game->jokerChooseTrump($color);
         self::ajaxResponse();
     }
   

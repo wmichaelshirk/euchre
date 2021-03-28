@@ -76,7 +76,7 @@ $machinestates = [
         "possibleactions" => array( "chooseTrump" ),
         "action" => "stJokerChooseSuit",
         "updateGameProgression" => true, 
-        "transitions" => array( "done" => 29 )
+        "transitions" => array( "done" => 26 )
     ],
 
     20 => [

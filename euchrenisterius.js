@@ -427,10 +427,12 @@ function (dojo, declare) {
             if (dojo.byId('trumpsymbolontable') != null) {
                 dojo.destroy('trumpsymbolontable')
             }
-            dojo.place(this.format_block('jstpl_trumpsymbolontable', {
-                suit,
-                symbol: this.suits[suit]?.symbol
-            }), 'trumpSuit')
+            if ([1,2,3,4].includes(suit)) {
+                dojo.place(this.format_block('jstpl_trumpsymbolontable', {
+                    suit,
+                    symbol: this.suits[suit]?.symbol
+                }), 'trumpSuit')
+            }
         },
 
 
@@ -588,6 +590,7 @@ function (dojo, declare) {
             dojo.subscribe('newHand', this, 'notifyNewHand')
             dojo.subscribe('pickUpCard', this, 'notifyPickUpCard')
             dojo.subscribe('discarded', this, 'notifyDiscarded')
+            dojo.subscribe('allPassed', this, 'notifyAllPassed')
             dojo.subscribe('chooseTrump', this, 'notifyChooseTrump')
             dojo.subscribe('playCard', this, 'notifyPlayCard')
             dojo.subscribe('trickWin', this, 'notifyTrickWin')
@@ -641,6 +644,11 @@ function (dojo, declare) {
                 let card = notif.args.cards[i]
                 this.playerHand.removeFromStockById(card)
             }
+        },
+
+        notifyAllPassed : function(notif) {
+            this.showTrumpCard(0,15); //TESTING
+            this.showTrumpSymbol(0);
         },
 
         notifyChooseTrump : function(notif) {

@@ -580,7 +580,12 @@ class euchrenisterius extends Table {
         } else if ( $count == 0 ) {
             // Everyone passed, so turn over turn up and move to new state
 
-            // Need to notify
+            // TODO: Need to notify and turn down turn up
+            self::setGameStateValue('turnUpSuit', 0);
+            self::setGameStateValue('turnUpValue', 15); //TESTING
+            self::notifyAllPlayers('allPassed', clienttranslate('All players passed.'), array(
+
+            ));
 
             self::activeNextPlayer();
             $this->gamestate->nextState( 'allRefusedTurnUp' );

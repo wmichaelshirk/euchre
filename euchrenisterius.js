@@ -111,11 +111,15 @@ function (dojo, declare) {
             // Get contract
 
             // Show the trump card (or suit) if it has been chosen
+            const turnUpSuit = Number(gamedatas.turnUpSuit)
+            const turnUpValue = gamedatas.turnUpValue
             const trumpSuit = Number(gamedatas.trumpSuit)
-            const trumpValue = gamedatas.trumpTurnup
-            this.trumpSuit = trumpSuit
-            this.showTrumpCard(trumpSuit, trumpValue)
-            this.updateCardsWeights()
+            this.turnUpSuit = turnUpSuit
+            this.showTrumpCard(turnUpSuit, turnUpValue)
+            // Show the trump suit if set, otherwise just re show the turn up suit
+            this.showTrumpSymbol(trumpSuit ? trumpSuit : turnUpSuit)
+            // Sort the card weights to the trump suit if set, otherwise to the turn up suit
+            this.updateCardsWeights(trumpSuit ? trumpSuit : turnUpSuit)
 
 
             // Create bids TODO: Probably there is a better way to do this...
@@ -271,10 +275,10 @@ function (dojo, declare) {
         },
 
         // Update cards weights based on current trumpColor
-        updateCardsWeights: function () {
+        updateCardsWeights: function (trumpSuit) {
             // shift trump to right
             let suitOrder = [1, 2, 3, 4]
-            let rest = suitOrder.splice(this.trumpSuit)
+            let rest = suitOrder.splice(trumpSuit)
             suitOrder = [...rest, ...suitOrder]
 
             // get new ranks for the suit rearrangement
@@ -288,9 +292,9 @@ function (dojo, declare) {
             })
             // bowers to the front:
             const jack = 11
-            const rightBowerId = this.getCardUniqueId(this.trumpSuit, jack)
+            const rightBowerId = this.getCardUniqueId(trumpSuit, jack)
             weights[rightBowerId] = 56
-            const sameColor = ((this.trumpSuit + 2) % 4) || 4
+            const sameColor = ((trumpSuit + 2) % 4) || 4
             const leftBowerId =  this.getCardUniqueId(sameColor, jack)
             weights[leftBowerId] = 55
             // best bower/joker
@@ -300,7 +304,7 @@ function (dojo, declare) {
             // add Trump Class
             this.playerHand.changeItemsWeight(weights)
             let ranks = [7, 8, 9, 10, 11, 12, 13, 14].map(rank =>
-                this.getCardUniqueId(this.trumpSuit, rank)
+                this.getCardUniqueId(trumpSuit, rank)
             )
             ;[...ranks, leftBowerId, bestBowerId].forEach(cardValId => {
                 let cardItem = this.playerHand.getAllItems()
@@ -593,7 +597,7 @@ function (dojo, declare) {
 
         },
 
-        // TODO: from this point and below, you can write your game
+        // From this point and below, you can write your game
         // notifications handling methods
 
         notifyNewDeal: function (notif) {
@@ -615,7 +619,6 @@ function (dojo, declare) {
                 let cardId = this.getCardUniqueId(suit, value)
                 this.playerHand.addToStockWithId(cardId, card.id)
             })
-            this.updateCardsWeights()
         },
 
         notifyPickUpCard : function(notif) {
@@ -628,7 +631,7 @@ function (dojo, declare) {
                 this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id)
             }
 
-            this.updateCardsWeights()
+            this.updateCardsWeights(notif.args.trumpSuit)
         },
 
         notifyDiscarded : function(notif) {
@@ -641,7 +644,9 @@ function (dojo, declare) {
         },
 
         notifyChooseTrump : function(notif) {
-            // TODO: Show the trump symbol on the table
+            this.showTrumpSymbol(notif.args.trumpSuit)
+
+            this.updateCardsWeights(notif.args.trumpSuit)
         },
 
         notifyPlayCard: function (notif) {

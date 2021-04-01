@@ -27,6 +27,12 @@ class action_euchrenisterius extends APP_GameAction {
 
     // TODO: defines your action entry points there
 
+    public function confirm() {
+      self::setAjaxMode();
+      $this->game->confirm();
+      self::ajaxResponse();
+    }
+
     public function playCard() {
         self::setAjaxMode();
         $card_id = self::getArg("id", AT_posint, true);
@@ -52,10 +58,20 @@ class action_euchrenisterius extends APP_GameAction {
     public function chooseTrump() {
         self::setAjaxMode();
         $color = self::getArg("color", AT_posint, true);
-        $this->game->jokerChooseTrump($color);
+        $jokerOrNot = self::getArg("jokerOrNot", AT_alphanum, true);
+        if ($jokerOrNot == 'joker') {
+            $this->game->jokerChooseTrump($color);
+        } else {
+            $this->game->chooseTrump($color);
+        }
         self::ajaxResponse();
     }
   
+    public function passChoosing() {
+        self::setAjaxMode();
+        $this->game->passChoosing();
+        self::ajaxResponse();
+    }
 
 }
 

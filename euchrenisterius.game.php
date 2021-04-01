@@ -29,10 +29,11 @@ class euchrenisterius extends Table {
             'trumpSuit' => 13,
             'turnUpSuit' => 14,
             'turnUpValue' => 15,
+            'refusedSuit' => 16,
 
-            'suitLed' => 16,
-            'trickCount' => 17,
+            'suitLed' => 17,
             'trickCount' => 18,
+            'trickCount' => 19,
 
             // Options:
             "targetScore" => 100,
@@ -94,6 +95,7 @@ class euchrenisterius extends Table {
 		self::setGameStateInitialValue('trumpSuit', 0);
         self::setGameStateInitialValue('turnUpSuit', 0);
         self::setGameStateInitialValue('turnUpValue', 0);
+        self::setGameStateInitialValue('refusedSuit', 0);
         self::setGameStateInitialValue('suitLed', 0);
         self::setGameStateInitialValue('trickCount', 0);
 
@@ -306,6 +308,19 @@ class euchrenisterius extends Table {
         return $card['type_arg'];
     }
 
+    function resetGameGlobals() {
+        // Make sure no players are marked as having passed
+        self::DbQuery( 'UPDATE player SET has_passed = 0' );
+    }
+
+    function nextDealer() {
+        $eldestId = self::getGameStateValue( 'eldestId' );
+        $newEldestId = self::getPlayerAfter( $eldestId );
+        self::setGameStateValue( 'dealerId' , $eldestId );
+        self::setGameStateValue( 'eldestId', $newEldestId );
+        $this->gamestate->changeActivePlayer( $newEldestId );
+    }
+
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
 ////////////
@@ -334,7 +349,6 @@ class euchrenisterius extends Table {
             ]);
 
         } else {
-            // TODO: Set trump suit and notify about the card being picked up
             $turnUp = $this->cards->getCardOnTop('deck');
 
             self::notifyAllPlayers('message', clienttranslate('${player_name} orders up the ${card_name}.'), [
@@ -444,6 +458,52 @@ class euchrenisterius extends Table {
         $this->gamestate->nextState('done');
     }
 
+    function chooseTrump($trumpSuit) {
+        // Check chooseTrump action is possible
+        self::checkAction ( 'chooseTrump' );
+
+        // Set $trumpSuit to an integer (not sure why but otherwise chooseTrump thinks it's a string)
+        $trumpSuit = (int)$trumpSuit;
+
+        // Set the trump suit to the declarer's choice
+        self::setGameStateValue('trumpSuit', $trumpSuit);
+
+        // Notify
+        self::notifyAllPlayers('chooseTrump', clienttranslate('${player_name} chooses ${trumpSuitName} as the trump suit.'), array(
+            'i18n' => array('trumpSuitName'),
+            'player_name' => self::getActivePlayerName(),
+            'trumpSuitName' => $this->suits[$trumpSuit]['name'],
+            'trumpSuit' => $trumpSuit
+        ));
+
+        $this->gamestate->nextState('chooseTrump');
+
+    }
+
+    function passChoosing() {
+        // Check pass action is possible
+        self::checkAction ( 'pass' );
+
+        // Get active player id
+        $active_player_id = self::getActivePlayerId();
+
+        // If this player passed, set the relevant field in the database
+        self::DbQuery( 'UPDATE player SET has_passed = 1 WHERE player_id = ' . $active_player_id );
+
+        // And notify 
+        self::notifyAllPlayers('message', clienttranslate('${player_name} passes'), [
+            'player_name' => self::getActivePlayerName()
+        ]);
+
+        $this->gamestate->nextState('pass');
+    }
+
+    function confirm() {
+        self::checkAction( 'confirm' );
+        $player_id = self::getCurrentPlayerId();
+        $this->gamestate->setPlayerNonMultiactive( $player_id, 'done' );
+    }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Game state arguments
@@ -461,6 +521,17 @@ class euchrenisterius extends Table {
         self::giveExtraTime( self::getActivePlayerId() );
     }
 
+    function giveEveryoneTime( $except = 0 )
+    {
+        $players = self::loadPlayersBasicInfos();
+        foreach( $players as $playerId => $data ) {
+            if( $playerId != $except ) {
+                self::giveExtraTime( $playerId );
+            }
+        }
+    }
+
+
     function argPlayerTurn() {
 		// On player's turn, list possible cards
 		return [
@@ -472,6 +543,14 @@ class euchrenisterius extends Table {
 				],
 			],
 		];
+    }
+
+    function argRefusedSuit() {
+        // When a player can choose the trump suit after all players pass,
+        // we need to forbid choosing the old turn up suit
+        return [
+            'refusedSuit' => self::getGameStateValue('refusedSuit')
+        ];
     }
 
     /*
@@ -498,6 +577,9 @@ class euchrenisterius extends Table {
      * 10 - Start a new hand -
      */
     function stNewHand() {
+        // Reset any global variables that may have beena affected by the last deal
+        $this->resetGameGlobals(); 
+
         // Take back all cards (from any location => null) to deck
         $this->cards->moveAllCardsInLocation(null, 'deck');
         // Create deck, shuffle it and deal 5
@@ -512,12 +594,6 @@ class euchrenisterius extends Table {
         self::setGameStateValue('turnUpSuit', $turnUp['type']);
         self::setGameStateValue('turnUpValue', $turnUp['type_arg']);
 
-        // TESTING: Show turn up in log
-        self::notifyAllPlayers('message', clienttranslate('TESTING: The turn up will be ${card_name}'), [
-            'card' => $turnUp,
-            'card_name' => '',
-        ]);
-
         // Announce start of hand.
         $dealer = self::getGameStateValue('dealerId');
         $eldest = self::getGameStateValue('eldestId');
@@ -526,8 +602,8 @@ class euchrenisterius extends Table {
             'player_name' => self::getPlayerName($dealer),
             'eldest' => $eldest,
             'card' => $turnUp,
-            'trumpSuit' => $turnUp['type'],
-            'trumpValue' => $turnUp['type_arg'],
+            'turnUpSuit' => $turnUp['type'],
+            'turnUpValue' => $turnUp['type_arg'],
             'card_name' => '',
         ]);
 
@@ -580,12 +656,17 @@ class euchrenisterius extends Table {
         } else if ( $count == 0 ) {
             // Everyone passed, so turn over turn up and move to new state
 
-            // TODO: Need to notify and turn down turn up
+            // Set the refusedSuit to the old turnUpSuit so that we can forbid from being chosen
+            self::setGameStateValue('refusedSuit', self::getGameStateValue('turnUpSuit'));
+
             self::setGameStateValue('turnUpSuit', 0);
-            self::setGameStateValue('turnUpValue', 15); //TESTING
-            self::notifyAllPlayers('allPassed', clienttranslate('All players passed.'), array(
+            self::setGameStateValue('turnUpValue', 15);
+            self::notifyAllPlayers('allPassed', clienttranslate('All players chose not to order up.'), array(
 
             ));
+
+            // Set all players as having not passed in the database
+            self::DbQuery( 'UPDATE player SET has_passed = 0' );
 
             self::activeNextPlayer();
             $this->gamestate->nextState( 'allRefusedTurnUp' );
@@ -611,6 +692,24 @@ class euchrenisterius extends Table {
             'cards' => $cards,
             'trumpSuit' => self::getGameStateValue('trumpSuit')
         ));
+    }
+
+    function stNextPlayerToChoose() {
+        // TODO: Add in has_passed standing stuff here
+        $standing = self::getCollectionFromDb( 'SELECT player_id FROM player WHERE has_passed = 0' );
+        $count = count( $standing );
+        if ($count == 0) {
+            // Everyone passed, so do something
+            // TODO: Handle stick the dealer
+            self::notifyAllPlayers( 'message', clienttranslate( 'All players have passed, anulling hand.' ), array() );
+            $this->gamestate->nextState('allPassed');
+            return;
+        }
+        // If people still standin, move on to the next player to bid
+        self::activeNextPlayer();
+        $this->gamestate->nextState('nextToChoose');
+        return;
+
     }
 
     /*
@@ -729,6 +828,15 @@ class euchrenisterius extends Table {
         // if someone hit the target option, end the game; otherwise
         // go to the next hand!
         $this->gamestate->nextState('endGame');
+    }
+
+    function stAnnulHand() {
+        self::notifyAllPlayers( 'message', clienttranslate('This hand has been annulled - redealing'), array() );
+        $this->gamestate->setAllPlayersMultiactive();
+        $this->giveEveryoneTime();
+
+        // Make new eldest hand the active player
+        $this->nextDealer();
     }
 
 

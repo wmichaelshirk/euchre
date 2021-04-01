@@ -229,6 +229,10 @@ function (dojo, declare) {
                     break;
                     
 */
+                case 'annulHand':
+                    this.addActionButton("btn_ok", _("OK"), 'onOKButtonClick');
+                    break;
+
                 case 'playerAcceptTurnUp':
                     this.addActionButton("btn_acceptTurnUp", _("Order Up"), 'onButtonTurnUp', null, false, 'red')
                     this.addActionButton("btn_passTurnUp", _("Pass"), 'onButtonTurnUp', null, false, 'blue')
@@ -240,8 +244,17 @@ function (dojo, declare) {
                 
                 case 'jokerChooseSuit':
                     for (var i = 1; i <= 4; i++) {
-                        this.addSuitButton(i)
+                        this.addSuitButton(i, true)
                     }
+                    break
+
+                case 'playerChooseTrump':
+                    for (var i=1; i <=4; i++) {
+                        if (i != args.refusedSuit) {
+                            this.addSuitButton(i, false)
+                        }
+                    }
+                    this.addActionButton("btn_passChooseTrump", _("Pass"), 'onButtonPassChoosing', null, false, 'blue')
                     break
                 }
             }
@@ -290,33 +303,38 @@ function (dojo, declare) {
                     weights[cardValId] = weight
                 }
             })
-            // bowers to the front:
-            const jack = 11
-            const rightBowerId = this.getCardUniqueId(trumpSuit, jack)
-            weights[rightBowerId] = 56
-            const sameColor = ((trumpSuit + 2) % 4) || 4
-            const leftBowerId =  this.getCardUniqueId(sameColor, jack)
-            weights[leftBowerId] = 55
-            // best bower/joker
-            const bestBowerId = this.getCardUniqueId(5, 1)
-            weights[bestBowerId] = 57
+            if (trumpSuit != 0) {
+                // bowers to the front:
+                const jack = 11
+                const rightBowerId = this.getCardUniqueId(trumpSuit, jack)
+                weights[rightBowerId] = 56
+                const sameColor = ((trumpSuit + 2) % 4) || 4
+                const leftBowerId =  this.getCardUniqueId(sameColor, jack)
+                weights[leftBowerId] = 55
+                // best bower/joker
+                const bestBowerId = this.getCardUniqueId(5, 1)
+                weights[bestBowerId] = 57
 
-            // add Trump Class
-            this.playerHand.changeItemsWeight(weights)
-            let ranks = [7, 8, 9, 10, 11, 12, 13, 14].map(rank =>
-                this.getCardUniqueId(trumpSuit, rank)
-            )
-            ;[...ranks, leftBowerId, bestBowerId].forEach(cardValId => {
-                let cardItem = this.playerHand.getAllItems()
-                    .find(c => c.type == cardValId)
-                if (cardItem && cardItem.id) {
-                    let cardDivId = this.playerHand.getItemDivId(cardItem.id)
-                    let cardDiv = document.getElementById(cardDivId)
-                    if (cardDiv) {
-                        cardDiv.classList.add('stockitem--is-trump')
+                // add Trump Class
+                this.playerHand.changeItemsWeight(weights)
+                let ranks = [7, 8, 9, 10, 11, 12, 13, 14].map(rank =>
+                    this.getCardUniqueId(trumpSuit, rank)
+                )
+                ;[...ranks, leftBowerId, bestBowerId].forEach(cardValId => {
+                    let cardItem = this.playerHand.getAllItems()
+                        .find(c => c.type == cardValId)
+                    if (cardItem && cardItem.id) {
+                        let cardDivId = this.playerHand.getItemDivId(cardItem.id)
+                        let cardDiv = document.getElementById(cardDivId)
+                        if (cardDiv) {
+                            cardDiv.classList.add('stockitem--is-trump')
+                        }
                     }
-                }
-            })
+                })
+            } else {
+                // add Trump Class
+                this.playerHand.changeItemsWeight(weights)
+            }
         },
 
 
@@ -389,9 +407,13 @@ function (dojo, declare) {
             })
         },
 
-        addSuitButton : function(suit) {
+        addSuitButton : function(suit, joker) {
             var suitName = _(this.suits[suit]['name']);
-            this.addActionButton('buttonSuit_' + suit, suitName + ' ' + this.suits[suit]['symbol'], 'onSuitButtonClick', null, false, 'gray');
+            if (joker == true) {
+                this.addActionButton('buttonSuit_' + suit + '_joker', suitName + ' ' + this.suits[suit]['symbol'], 'onSuitButtonClick', null, false, 'gray');
+            } else {
+                this.addActionButton('buttonSuit_' + suit + '_noJoker', suitName + ' ' + this.suits[suit]['symbol'], 'onSuitButtonClick', null, false, 'gray');
+            }
             var toolTipText = dojo.string.substitute( _("Choose ${s} as the trump suit."), {
                 s: suitName
             } );
@@ -497,6 +519,16 @@ function (dojo, declare) {
             this.checkIfPlay(false)
         },
 
+        onOKButtonClick: function(event) {
+            if (this.checkAction('confirm')) {
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'confirm' + ".html", {
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
         onButtonTurnUp : function (event) {
             if (this.checkAction('acceptOrPass')) {
                 const button_id = dojo.getAttr(event.currentTarget, 'id')
@@ -523,12 +555,25 @@ function (dojo, declare) {
             }
         },
 
+        onButtonPassChoosing : function (event) {
+            if (this.checkAction('chooseTrump')) {
+                const button_id = dojo.getAttr(event.currentTarget, 'id')
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'passChoosing' + ".html", {
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
         onSuitButtonClick : function (event) {
             if (this.checkAction('chooseTrump')) {
                 var button_id = dojo.getAttr(event.currentTarget, 'id');
                 var bid_id = button_id.split('_')[1];
+                var jokerOrNot = button_id.split('_')[2];
                 this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'chooseTrump' + ".html", {
                     color: bid_id,
+                    jokerOrNot: jokerOrNot,
                     lock : true
                 }, this, function(result) {
                 }, function(is_error) {
@@ -613,6 +658,10 @@ function (dojo, declare) {
             // this.dealer = notif.args.dealer_id
 
             // activate all players, inactive inactive player
+
+            // Show turn up card on table
+            this.showTrumpCard(Number(notif.args.turnUpSuit), notif.args.turnUpValue)
+            this.updateCardsWeights(Number(notif.args.turnUpSuit))
         },
 
         notifyNewHand: function (notif) {
@@ -647,8 +696,9 @@ function (dojo, declare) {
         },
 
         notifyAllPassed : function(notif) {
-            this.showTrumpCard(0,15); //TESTING
-            this.showTrumpSymbol(0);
+            this.showTrumpCard(0,15)
+            this.showTrumpSymbol(0)
+            this.updateCardsWeights(0)
         },
 
         notifyChooseTrump : function(notif) {

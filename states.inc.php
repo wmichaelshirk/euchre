@@ -65,28 +65,78 @@ $machinestates = [
         "type" => "game",
         "action" => "stNewHand",
         "updateGameProgression" => true,
-        "transitions" => ["" => 29]
+        "transitions" => ["joker" => 19, "noJoker" => 20]
     ],
 
-    // Bidding
-    20 => [
-        "name" => "dealDeclare",
-        "description" => clientTranslate('${actplayer} must declare any combinations'),
-        "descriptionmyturn" => clienttranslate('${you} must declare any combinations'),
+    19 => [
+        "name" => "jokerChooseSuit",
+        "description" => clienttranslate('${actplayer} must choose a trump suit'),
+        "descriptionmyturn" => clienttranslate('${you} must choose a trump suit'),
         "type" => "activeplayer",
-        "possibleactions" => array("playCard"),  // TODO
-        "transitions" => array("playCard" => 22)  // TODO
+        "possibleactions" => array( "chooseTrump" ),
+        "action" => "giveExtraTimeToActivePlayer",
+        "updateGameProgression" => true, 
+        "transitions" => array( "done" => 26 )
     ],
+
+    20 => [
+        "name" => "playerAcceptTurnUp",
+        "description" => clienttranslate('${actplayer} must choose whether to order up the turn up'),
+        "descriptionmyturn" => clienttranslate('${you} must choose whether to order up the turn up'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "acceptOrPass" ),
+        "action" => "giveExtraTimeToActivePlayer",
+        "updateGameProgression" => true, 
+        "transitions" => array( "acceptOrPass" => 21 )
+    ],
+
     21 => [
-        "name" => "nextDeclarer",
+        "name" => "nextTurnUpAccepter",
         "description" => "",
         "type" => "game",
-        "action" => "stNextDeclarer",
-        "transitions" => [
-            "nextPlayer" => 20,
-            "loopback" => 21,
-            "firstTrick" => 29
-        ]
+        "action" => "stNextPlayerToAccept",
+        "transitions" => array( "nextToAccept" => 20, "allRefusedTurnUp" => 22, "done" => 26 )
+    ],
+
+    22 => [
+        "name" => "playerChooseTrump",
+        "description" => clienttranslate('${actplayer} must choose a trump suit or pass'),
+        "descriptionmyturn" => clienttranslate('${you} must choose a trump suit or pass'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "pass", "chooseTrump" ),
+        "action" => "giveExtraTimeToActivePlayer",
+        "updateGameProgression" => true, 
+        "transitions" => array( "pass" => 23, "chooseTrump" => 29 ),
+        "args" => 'argRefusedSuit'
+    ],
+
+    23 => [
+        "name" => "nextTrumpChooser",
+        "description" => "",
+        "type" => "game",
+        "action" => "stNextPlayerToChoose",
+        "transitions" => array( "nextToChoose" => 22, "allPassed" => 24, "done" => 29 )
+    ],
+
+    24 => [
+        "name" => "annulHand",
+        "description" => clienttranslate('Players must confirm annulling the hand...'),
+        "descriptionmyturn" => clienttranslate('This hand is annulled and will be dealt again'),
+        "type" => "multipleactiveplayer",
+        "action" => "stAnnulHand",
+        "possibleactions" => array( "confirm" ),
+        "transitions" => array( "done" => 10 ) 
+    ],
+
+    26 => [
+        "name" => "discardTurnUp",
+        "description" => clienttranslate('${actplayer} must discard a card'),
+        "descriptionmyturn" => clienttranslate('${you} must discard a card'),
+        "type" => "activeplayer",
+        "possibleactions" => array( "discard" ),
+        "action" => "stDiscard",
+        "updateGameProgression" => true, 
+        "transitions" => array( "done" => 29 )   
     ],
 
 

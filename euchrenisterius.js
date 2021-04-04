@@ -112,11 +112,15 @@ function (dojo, declare) {
             // Get contract
 
             // Show the trump card (or suit) if it has been chosen
+            const turnUpSuit = Number(gamedatas.turnUpSuit)
+            const turnUpValue = gamedatas.turnUpValue
             const trumpSuit = Number(gamedatas.trumpSuit)
-            const trumpValue = gamedatas.trumpTurnup
-            this.trumpSuit = trumpSuit
-            this.showTrumpCard(trumpSuit, trumpValue)
-            this.updateCardsWeights()
+            this.turnUpSuit = turnUpSuit
+            this.showTrumpCard(turnUpSuit, turnUpValue)
+            // Show the trump suit if set, otherwise just re show the turn up suit
+            this.showTrumpSymbol(trumpSuit ? trumpSuit : turnUpSuit)
+            // Sort the card weights to the trump suit if set, otherwise to the turn up suit
+            this.updateCardsWeights(trumpSuit ? trumpSuit : turnUpSuit)
 
 
             // Create bids TODO: Probably there is a better way to do this...
@@ -233,7 +237,35 @@ function (dojo, declare) {
                     this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
                     this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
                     break;
-                    */
+                    
+*/
+                case 'annulHand':
+                    this.addActionButton("btn_ok", _("OK"), 'onOKButtonClick');
+                    break;
+
+                case 'playerAcceptTurnUp':
+                    this.addActionButton("btn_acceptTurnUp", _("Order Up"), 'onButtonTurnUp', null, false, 'red')
+                    this.addActionButton("btn_passTurnUp", _("Pass"), 'onButtonTurnUp', null, false, 'blue')
+                    break
+
+                case 'discardTurnUp':
+                    this.addActionButton("btn_discard", _("Discard"), 'onButtonDiscard', null, false, 'red')
+                    break
+                
+                case 'jokerChooseSuit':
+                    for (var i = 1; i <= 4; i++) {
+                        this.addSuitButton(i, true)
+                    }
+                    break
+
+                case 'playerChooseTrump':
+                    for (var i=1; i <=4; i++) {
+                        if (i != args.refusedSuit) {
+                            this.addSuitButton(i, false)
+                        }
+                    }
+                    this.addActionButton("btn_passChooseTrump", _("Pass"), 'onButtonPassChoosing', null, false, 'blue')
+                    break
                 }
             }
         },
@@ -251,6 +283,11 @@ function (dojo, declare) {
         // Get card unique identifier based on its suit and rank
         getCardUniqueId: (suit, rank) => (suit - 1) * 14 + (rank - 2),
 
+        // Get cards selected in hand
+        getSelectedCards: function() {
+            return this.playerHand.getSelectedItems().map(item => item.id)
+        },
+
         makeAjaxCall: function(methodName, args, onError = error => {}) {
             $('pagemaintitletext').innerHTML = _('Sending move to server...')
             $('generalactions').innerHTML = ''
@@ -261,10 +298,10 @@ function (dojo, declare) {
         },
 
         // Update cards weights based on current trumpColor
-        updateCardsWeights: function () {
+        updateCardsWeights: function (trumpSuit) {
             // shift trump to right
             let suitOrder = [1, 2, 3, 4]
-            let rest = suitOrder.splice(this.trumpSuit)
+            let rest = suitOrder.splice(trumpSuit)
             suitOrder = [...rest, ...suitOrder]
 
             // get new ranks for the suit rearrangement
@@ -276,33 +313,38 @@ function (dojo, declare) {
                     weights[cardValId] = weight
                 }
             })
-            // bowers to the front:
-            const jack = 11
-            const rightBowerId = this.getCardUniqueId(this.trumpSuit, jack)
-            weights[rightBowerId] = 56
-            const sameColor = ((this.trumpSuit + 2) % 4) || 4
-            const leftBowerId =  this.getCardUniqueId(sameColor, jack)
-            weights[leftBowerId] = 55
-            // best bower/joker
-            const bestBowerId = this.getCardUniqueId(5, 1)
-            weights[bestBowerId] = 57
+            if (trumpSuit != 0) {
+                // bowers to the front:
+                const jack = 11
+                const rightBowerId = this.getCardUniqueId(trumpSuit, jack)
+                weights[rightBowerId] = 56
+                const sameColor = ((trumpSuit + 2) % 4) || 4
+                const leftBowerId =  this.getCardUniqueId(sameColor, jack)
+                weights[leftBowerId] = 55
+                // best bower/joker
+                const bestBowerId = this.getCardUniqueId(5, 1)
+                weights[bestBowerId] = 57
 
-            // add Trump Class
-            this.playerHand.changeItemsWeight(weights)
-            let ranks = [7, 8, 9, 10, 11, 12, 13, 14].map(rank =>
-                this.getCardUniqueId(this.trumpSuit, rank)
-            )
-            ;[...ranks, leftBowerId, bestBowerId].forEach(cardValId => {
-                let cardItem = this.playerHand.getAllItems()
-                    .find(c => c.type == cardValId)
-                if (cardItem && cardItem.id) {
-                    let cardDivId = this.playerHand.getItemDivId(cardItem.id)
-                    let cardDiv = document.getElementById(cardDivId)
-                    if (cardDiv) {
-                        cardDiv.classList.add('stockitem--is-trump')
+                // add Trump Class
+                this.playerHand.changeItemsWeight(weights)
+                let ranks = [7, 8, 9, 10, 11, 12, 13, 14].map(rank =>
+                    this.getCardUniqueId(trumpSuit, rank)
+                )
+                ;[...ranks, leftBowerId, bestBowerId].forEach(cardValId => {
+                    let cardItem = this.playerHand.getAllItems()
+                        .find(c => c.type == cardValId)
+                    if (cardItem && cardItem.id) {
+                        let cardDivId = this.playerHand.getItemDivId(cardItem.id)
+                        let cardDiv = document.getElementById(cardDivId)
+                        if (cardDiv) {
+                            cardDiv.classList.add('stockitem--is-trump')
+                        }
                     }
-                }
-            })
+                })
+            } else {
+                // add Trump Class
+                this.playerHand.changeItemsWeight(weights)
+            }
         },
 
 
@@ -375,6 +417,21 @@ function (dojo, declare) {
             })
         },
 
+
+        addSuitButton : function(suit, joker) {
+            var suitName = _(this.suits[suit]['name']);
+            if (joker == true) {
+                this.addActionButton('buttonSuit_' + suit + '_joker', suitName + ' ' + this.suits[suit]['symbol'], 'onSuitButtonClick', null, false, 'gray');
+            } else {
+                this.addActionButton('buttonSuit_' + suit + '_noJoker', suitName + ' ' + this.suits[suit]['symbol'], 'onSuitButtonClick', null, false, 'gray');
+            }
+            var toolTipText = dojo.string.substitute( _("Choose ${s} as the trump suit."), {
+                s: suitName
+            } );
+            this.addTooltipHtml('buttonSuit_' + suit, toolTipText);
+        },
+
+
         /* Player Avatar Management */
 
         // Return a player element (with class .playerTables__<suffix>)
@@ -417,10 +474,12 @@ function (dojo, declare) {
             if (dojo.byId('trumpsymbolontable') != null) {
                 dojo.destroy('trumpsymbolontable')
             }
-            dojo.place(this.format_block('jstpl_trumpsymbolontable', {
-                suit,
-                symbol: this.suits[suit]?.symbol
-            }), 'trumpSuit')
+            if ([1,2,3,4].includes(suit)) {
+                dojo.place(this.format_block('jstpl_trumpsymbolontable', {
+                    suit,
+                    symbol: this.suits[suit]?.symbol
+                }), 'trumpSuit')
+            }
         },
 
         updatePlayerTrickCount: function (playerId, tricksWon) {
@@ -491,6 +550,68 @@ function (dojo, declare) {
             this.checkIfPlay(false)
         },
 
+        onOKButtonClick: function(event) {
+            if (this.checkAction('confirm')) {
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'confirm' + ".html", {
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
+        onButtonTurnUp : function (event) {
+            if (this.checkAction('acceptOrPass')) {
+                const button_id = dojo.getAttr(event.currentTarget, 'id')
+                const acceptOrPass = button_id.split('_')[1]
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'acceptOrPass' + ".html", {
+                    bid: acceptOrPass,
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
+        onButtonDiscard : function (event) {
+            if (this.checkAction('discard')) {
+                const selected = this.getSelectedCards()
+
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'discard' + ".html", {
+                    cards: selected.join(','),
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
+        onButtonPassChoosing : function (event) {
+            if (this.checkAction('chooseTrump')) {
+                const button_id = dojo.getAttr(event.currentTarget, 'id')
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'passChoosing' + ".html", {
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
+        onSuitButtonClick : function (event) {
+            if (this.checkAction('chooseTrump')) {
+                var button_id = dojo.getAttr(event.currentTarget, 'id');
+                var bid_id = button_id.split('_')[1];
+                var jokerOrNot = button_id.split('_')[2];
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + 'chooseTrump' + ".html", {
+                    color: bid_id,
+                    jokerOrNot: jokerOrNot,
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
         /* Example:
 
         onMyMethodToCall1: function( evt )
@@ -543,6 +664,10 @@ function (dojo, declare) {
 
             dojo.subscribe('newDeal', this, 'notifyNewDeal')
             dojo.subscribe('newHand', this, 'notifyNewHand')
+            dojo.subscribe('pickUpCard', this, 'notifyPickUpCard')
+            dojo.subscribe('discarded', this, 'notifyDiscarded')
+            dojo.subscribe('allPassed', this, 'notifyAllPassed')
+            dojo.subscribe('chooseTrump', this, 'notifyChooseTrump')
             dojo.subscribe('playCard', this, 'notifyPlayCard')
             dojo.subscribe('trickWin', this, 'notifyTrickWin')
             this.notifqueue.setSynchronous('trickWin', 1000)
@@ -551,7 +676,7 @@ function (dojo, declare) {
 
         },
 
-        // TODO: from this point and below, you can write your game
+        // From this point and below, you can write your game
         // notifications handling methods
 
         notifyNewDeal: function (notif) {
@@ -564,6 +689,10 @@ function (dojo, declare) {
             // this.dealer = notif.args.dealer_id
 
             // activate all players, inactive inactive player
+
+            // Show turn up card on table
+            this.showTrumpCard(Number(notif.args.turnUpSuit), notif.args.turnUpValue)
+            this.updateCardsWeights(Number(notif.args.turnUpSuit))
         },
 
         notifyNewHand: function (notif) {
@@ -573,7 +702,40 @@ function (dojo, declare) {
                 let cardId = this.getCardUniqueId(suit, value)
                 this.playerHand.addToStockWithId(cardId, card.id)
             })
-            this.updateCardsWeights()
+        },
+
+        notifyPickUpCard : function(notif) {
+            // We received some new cards that we need to add to the hand.
+
+            for ( var i in notif.args.cards) {
+                let card = notif.args.cards[i]
+                let color = card.type
+                let value = card.type_arg
+                this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id)
+            }
+
+            this.updateCardsWeights(notif.args.trumpSuit)
+        },
+
+        notifyDiscarded : function(notif) {
+            // We discarded a card.
+
+            for ( var i in notif.args.cards) {
+                let card = notif.args.cards[i]
+                this.playerHand.removeFromStockById(card)
+            }
+        },
+
+        notifyAllPassed : function(notif) {
+            this.showTrumpCard(0,15)
+            this.showTrumpSymbol(0)
+            this.updateCardsWeights(0)
+        },
+
+        notifyChooseTrump : function(notif) {
+            this.showTrumpSymbol(notif.args.trumpSuit)
+
+            this.updateCardsWeights(notif.args.trumpSuit)
         },
 
         notifyPlayCard: function (notif) {
